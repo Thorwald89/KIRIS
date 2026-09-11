@@ -1,3 +1,9 @@
+import sys
+import os
+
+# Inclusione root path
+sys.path.append(os.path.abspath(os.path.dirname(__file__)))
+
 import streamlit as st
 import pandas as pd
 from src.kir_analysis import (
@@ -5,16 +11,14 @@ from src.kir_analysis import (
     map_hla_to_ligands, calculate_b_content_logic, assess_donor_education,
     calculate_vectors_quantitative, CEN_GENES, TEL_GENES
 )
-from src.hed_engine import calculate_hed
 
 st.set_page_config(page_title="KIRIS PRO - Alloreattività NK & Immunogenetica", page_icon="🧬", layout="wide")
 
 st.title("🧬 KIRis PRO: Alloreactivity & Immunogenetics Toolkit")
-st.markdown("**Versione Validata ISO 13485** con eccezione $B*13$ anergica (Leucina-80), B-Content e Divergenza HED.")
+st.markdown("**Versione Validata ISO 13485** con eccezione $B*13$ anergica (Leucina-80), B-Content e vettori di alloreattività.")
 
-tab1, tab2, tab3 = st.tabs([
+tab1, tab2 = st.tabs([
     "📊 Analisi Alloreattività & Vettori Clinici", 
-    "🧬 Divergenza HED (Locus A/B/C)", 
     "📁 Analisi Coorte (CSV/Excel)"
 ])
 
@@ -96,7 +100,6 @@ with tab1:
         st.write(f"🎯 **Vettore GvL:** Score {gvl_sc}/5 — {gvl_s}")
         st.progress(gvl_sc * 20)
 
-        # Matrice Excel
         def get_excel_label(kir_name):
             match_kir = next((x for x in edu_res if x['KIR'] == kir_name), None)
             if not match_kir or match_kir['Status'] == 'Neg': return "NEG"
@@ -108,29 +111,8 @@ with tab1:
         st.markdown("#### 📋 Stringa per Excel")
         st.code(excel_row_string, language="text")
 
-# --- TAB 2: HED ENGINE ---
+# --- TAB 2: UPLOAD DATASET ---
 with tab2:
-    st.subheader("Calcolo HLA Evolutionary Distance (HED)")
-    st.markdown("Analisi della divergenza amminoacidica nel **Locus A** per valutare l'effetto sulla presentazione peptidica e sul rischio di anti-viral failure.")
-    c1, c2 = st.columns(2)
-    with c1:
-        seq_a = st.text_area("Sequenza Allele 1 (Locus A)", "SHSMRYFFTSVSRPGRGEPRFIAVGYVDDTQFVRFDSDAASQRMEPRAPWIEQEGPEYWDRNTRNVKAQSQTDRVDLGTLRGYYNQSEAGS")
-    with c2:
-        seq_b = st.text_area("Sequenza Allele 2 (Locus A)", "SHSMRYFFTSVSRPGRGEPRFIAVGYVDDTQFVRFDSDAASQRMEPRAPWIEQEGPEYWEEETRNVKAQSQTDRVDLGTLRGYYNQSEAGS")
-
-    if st.button("Calcola HED"):
-        try:
-            val = calculate_hed(seq_a, seq_b)
-            st.metric("Divergenza HED (Distanza Grantham)", f"{val}")
-            if val < 5.0:
-                st.warning("⚠️ **Bassa Divergenza (LHH/LLL):** Rischio compromissione presentazione peptidica virale.")
-            else:
-                st.success("✅ **Alta Divergenza:** Ampio repertorio peptidico.")
-        except Exception as e:
-            st.error(f"Errore: {e}")
-
-# --- TAB 3: UPLOAD DATASET ---
-with tab3:
     st.subheader("Analisi Coorte Batch")
     f = st.file_uploader("Carica file dataset (.csv / .xlsx)", type=["csv", "xlsx"])
     if f is not None:
