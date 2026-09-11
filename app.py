@@ -1,7 +1,6 @@
 import sys
 import os
 
-# Inclusione root path
 sys.path.append(os.path.abspath(os.path.dirname(__file__)))
 
 import streamlit as st
@@ -81,7 +80,7 @@ with tab1:
 
         st.markdown("---")
         
-        # --- GRAFICA CUSTOM: MAPPA CROMOSOMICA LOCUS KIR ---
+        # --- GENERAZIONE BOXES HTML SENZA INDENTAZIONE (PREVIENE FORMATTAZIONE CODE) ---
         all_ordered_genes = [
             ("3DL3", "KIR3DL3", "FW"), ("2DS2", "KIR2DS2", ""), ("2DL2", "KIR2DL2", ""),
             ("2DL3", "KIR2DL3", ""), ("2DS3", "KIR2DS3", ""), ("2DP1", "KIR2DP1", "Ψ"),
@@ -91,7 +90,7 @@ with tab1:
             ("2DS4", "KIR2DS4", ""), ("3DL2", "KIR3DL2", "FW")
         ]
 
-        gene_boxes_html = ""
+        gene_boxes_list = []
         for short_name, full_name, badge in all_ordered_genes:
             is_present = full_name in selected_kir
             bg_color = "#1e3a8a" if is_present else "#e2e8f0"
@@ -99,42 +98,44 @@ with tab1:
             border_style = "2px solid #2563eb" if is_present else "1px dashed #cbd5e1"
             badge_html = f"<span style='font-size:0.65rem; background:#3b82f6; color:white; padding:1px 4px; border-radius:3px; margin-left:3px;'>{badge}</span>" if badge else ""
             
-            gene_boxes_html += f"""
-            <div style="flex: 1; min-width: 52px; background: {bg_color}; color: {text_color}; border: {border_style}; border-radius: 6px; padding: 8px 4px; text-align: center; font-weight: bold; font-size: 0.8rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
-                {short_name}{badge_html}
-            </div>
-            """
+            box = f'<div style="flex:1; min-width:52px; background:{bg_color}; color:{text_color}; border:{border_style}; border-radius:6px; padding:8px 4px; text-align:center; font-weight:bold; font-size:0.8rem; box-shadow:0 1px 3px rgba(0,0,0,0.1);">{short_name}{badge_html}</div>'
+            gene_boxes_list.append(box)
 
-        st.markdown(f"""
-        <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 15px; margin-bottom: 25px;">
-            <div style="font-weight: bold; color: #1e293b; margin-bottom: 10px; display: flex; justify-content: space-between;">
-                <span>🧬 MAPPA INTERATTIVA DEL LOCUS CROMOSOMICO KIR</span>
-                <span style="font-size: 0.85rem; color: #64748b;">TELOMERO ➡️</span>
-            </div>
-            <div style="display: flex; gap: 4px; overflow-x: auto; padding-bottom: 5px;">
-                {gene_boxes_html}
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
+        boxes_str = "".join(gene_boxes_list)
 
-        # --- GRAFICA CUSTOM: REPORT CARDS ---
-        st.markdown(f"""
-        <div style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); color: white; border-radius: 12px; padding: 20px; margin-bottom: 25px;">
-            <h3 style="margin-top:0; color: #38bdf8;">📊 KIRis: Report Immunogenetico Alloreattività</h3>
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 15px;">
-                <div style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 15px;">
-                    <h4 style="margin-top:0; color: #f1f5f9;">1. Profilo KIR & Struttura Aplotipica (Donatore)</h4>
-                    <p style="margin: 5px 0;"><b>Aplotipo Matematico:</b> <span style="color:#38bdf8;">{haplo}</span> | <b>B-Score:</b> {b_score}</p>
-                    <p style="margin: 5px 0;"><b>Regione Centromerica (CEN):</b> {cen_h} | <b>Regione Telomerica (TEL):</b> {tel_h}</p>
-                </div>
-                <div style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 15px;">
-                    <h4 style="margin-top:0; color: #f1f5f9;">2. Mappatura Reale Epitopi ed Espressione</h4>
-                    <p style="margin: 5px 0;"><b>Epitopi Donatore:</b> {', '.join(d_ligs)}</p>
-                    <p style="margin: 5px 0;"><b>Epitopi Ricevente:</b> {', '.join(r_ligs)}</p>
-                </div>
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
+        # Render HTML Mappa Cromosomica
+        st.markdown(
+            f'<div style="background-color:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:15px; margin-bottom:25px;">'
+            f'<div style="font-weight:bold; color:#1e293b; margin-bottom:10px; display:flex; justify-content:space-between;">'
+            f'<span>🧬 MAPPA INTERATTIVA DEL LOCUS CROMOSOMICO KIR</span><span style="font-size:0.85rem; color:#64748b;">TELOMERO ➡️</span>'
+            f'</div>'
+            f'<div style="display:flex; gap:4px; overflow-x:auto; padding-bottom:5px;">{boxes_str}</div>'
+            f'</div>',
+            unsafe_allow_html=True
+        )
+
+        # Render HTML Cards Report
+        d_ligs_str = ", ".join(d_ligs)
+        r_ligs_str = ", ".join(r_ligs)
+        
+        st.markdown(
+            f'<div style="background:linear-gradient(135deg, #1e293b 0%, #0f172a 100%); color:white; border-radius:12px; padding:20px; margin-bottom:25px;">'
+            f'<h3 style="margin-top:0; color:#38bdf8;">📊 KIRis: Report Immunogenetico Alloreattività</h3>'
+            f'<div style="display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-top:15px;">'
+            f'<div style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:8px; padding:15px;">'
+            f'<h4 style="margin-top:0; color:#f1f5f9;">1. Profilo KIR & Struttura Aplotipica (Donatore)</h4>'
+            f'<p style="margin:5px 0;"><b>Aplotipo Matematico:</b> <span style="color:#38bdf8;">{haplo}</span> | <b>B-Score:</b> {b_score}</p>'
+            f'<p style="margin:5px 0;"><b>Regione Centromerica (CEN):</b> {cen_h} | <b>Regione Telomerica (TEL):</b> {tel_h}</p>'
+            f'</div>'
+            f'<div style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:8px; padding:15px;">'
+            f'<h4 style="margin-top:0; color:#f1f5f9;">2. Mappatura Reale Epitopi ed Espressione</h4>'
+            f'<p style="margin:5px 0;"><b>Epitopi Donatore:</b> {d_ligs_str}</p>'
+            f'<p style="margin:5px 0;"><b>Epitopi Ricevente:</b> {r_ligs_str}</p>'
+            f'</div>'
+            f'</div>'
+            f'</div>',
+            unsafe_allow_html=True
+        )
 
         # --- TABELLA E SCORING VETTORI ---
         st.markdown("#### 🎓 Modello di Educazione Funzionale NK")
