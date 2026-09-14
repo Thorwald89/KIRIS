@@ -80,7 +80,7 @@ with tab1:
 
         st.markdown("---")
         
-        # Mappa Cromosomica HTML
+        # --- MAPPA INTERATTIVA CHROMOSOMICA HTML ---
         all_ordered_genes = [
             ("3DL3", "KIR3DL3", "FW"), ("2DS2", "KIR2DS2", ""), ("2DL2", "KIR2DL2", ""),
             ("2DL3", "KIR2DL3", ""), ("2DS3", "KIR2DS3", ""), ("2DP1", "KIR2DP1", "Ψ"),
@@ -113,7 +113,7 @@ with tab1:
             unsafe_allow_html=True
         )
 
-        # Cards Report HTML
+        # --- CARDS REPORT HTML ---
         d_ligs_str = ", ".join(d_ligs)
         r_ligs_str = ", ".join(r_ligs)
         
@@ -136,11 +136,11 @@ with tab1:
             unsafe_allow_html=True
         )
 
-        # Tabella Educazione NK
-        st.markdown("#### 🎓 Modello di Educazione Funzionale NK")
+        # --- TABELLA EDUCAZIONE NK CON STRATIFICAZIONE ---
+        st.markdown("#### 🎓 Modello di Educazione Funzionale NK (Stratificazione Graduata)")
         st.dataframe(pd.DataFrame(edu_res), use_container_width=True)
 
-        # Scoring Vettori Clinici
+        # --- SCORING VETTORI CLINICI ---
         st.markdown("#### 🎯 Scored Vettori Clinici Quantitativi (1-5)")
         st.write(f"⚡ **Vettore GvH:** Score {gvh_sc}/5 — {gvh_s}")
         st.progress(gvh_sc * 20)
@@ -151,21 +151,37 @@ with tab1:
         st.write(f"🎯 **Vettore GvL:** Score {gvl_sc}/5 — {gvl_s}")
         st.progress(gvl_sc * 20)
 
-        # --- LEGENDA LOGICA VETTORI CLINICI ---
-        with st.expander("📖 Legenda e Logica di Calcolo dei Vettori Clinici"):
+        # --- LEGENDA E SPIEGAZIONE SCIENTIFICA DEL LICENSING ---
+        with st.expander("📖 Legenda, Stratificazione Funzionale e Logica dei Vettori"):
             st.markdown("""
+            ### 1. Stratificazione Graduata dell'Educazione NK (*Rheostat Model*)
+            L'educazione NK non è un fenomeno binario (ON/OFF), ma segue il **Rheostat Model** (Joncker et al., *Blood*), in cui l'affinità chimico-fisica del legame KIR-HLA determina il potenziale citotossico dell'NK in caso di *missing-self*.
+
+            * **🟢 Licensing Forte (High-Affinity):**
+              * **Bw4-Ile80 + KIR3DL1:** Presenza di Isoleucina al residuo 80 dell'HLA-B/A. Assicura una costante di affinità ($K_d$) ottimale, conferendo massima degranulazione (CD107a) ed espressione di Perforina/Granzyme B.
+              * **C2 + KIR2DL1:** L'interazione con Lisina-80 genera la risposta inibitoria/licensing più solida nel sistema HLA-C.
+            * **🟡 Licensing Moderato / Intermedio (Intermediate-Affinity):**
+              * **Bw4-Thr80 + KIR3DL1:** La presenza di Treonina al residuo 80 induce un legame meno stabile con KIR3DL1; l'educazione è parziale ed eroga un potenziale alloreattivo intermedio.
+              * **C1 + KIR2DL2:** Interazione a media affinità per il gruppo C1 (Asparagina-80).
+            * **🟠 Licensing Debole (Low-Affinity):**
+              * **C1 + KIR2DL3:** Interazione molecolare a più bassa affinità per HLA-C1 rispetto a KIR2DL2.
+            * **🔴 Anergico / No Licensing (Null):**
+              * **Bw4-Leu80 ($B*13$):** La sostituzione con Leucina al residuo 80 modifica la conformazione α1 dell'HLA, impedendo il legame inibitorio con KIR3DL1 e lasciando i linfociti NK non-licenziati/anergici.
+              * **Bw6 (No KIR):** L'epitopo Bw6 non possiede alcun recettore KIR inibitorio o attivatorio corrispondente.
+
+            ---
+
+            ### 2. Logica di Ponderazione dei Vettori Clinici (Score 1-5)
             * **⚡ Vettore GvH (Graft-vs-Host):**
-              * **1/5 (Nullo):** Il ricevente possiede tutti i ligandi inibitori prescritti dal donatore (assenza di mismatch inibitorio).
-              * **2-5 (Incrementale):** Presenza di *Missing-Self* sul ricevente coordinata da KIR inibitori del donatore **educati**, oltre alla potenziale attivazione diretta mediata da aplotipi B/X o KIR2DS1.
-
+              * **1/5 (Nullo):** Il ricevente possiede tutti i ligandi inibitori del donatore.
+              * **2-5 (Incrementale):** Mismatch inibitorio basato su recettori KIR del donatore **fortemente o moderatamente educati**, unito al rischio potenziale da KIR attivatori (es. KIR2DS1).
             * **🛡️ Vettore HvG (Host-vs-Graft / Rischio Rigetto):**
-              * **1/5 (Nullo):** Il donatore possiede tutti i ligandi espressi dal ricevente.
-              * **2-5 (Incrementale):** Il donatore sprovvisto di un ligando presente nel ricevente (es. *Manca C2* o *Manca Bw4*) espone l'innesto all'attacco da parte di cellule NK residue del ricevente.
-
+              * **1/5 (Nullo):** Nessun mismatch verso l'innesto.
+              * **2-5 (Incrementale):** Assenza nel donatore di un ligando espresso dal ricevente (es. *Manca C2* o *Manca Bw4*), con potenziale attivazione da NK residue dell'ospite contro il trapianto.
             * **🎯 Vettore GvL (Graft-vs-Leukemia / Effetto Anti-Leucemico):**
-              * **Base (Missing-Self):** Assenza nel ricevente di ligandi inibitori riconosciuti da KIR educati nel donatore (+1.5 - +2.0).
-              * **Boost Aplotipo B (+1.0):** Presenza di genotipo B/X nel donatore (elevato contenuto di geni attivatori).
-              * **Boost KIR2DS1 (+1.5):** Donatore con KIR2DS1 **educato** (presenza C1/C1 o C1/C2 nel donatore) e ricevente **C2+** (massima risposta alloreattiva tumorale).
+              * **Missing-Self:** Assenza nel ricevente di ligandi inibitori correlati a KIR licenziati nel donatore.
+              * **Boost Aplotipo B (+1.0):** Elevata presenza di loci attivatori centromerici o telomerici nel genoma del donatore.
+              * **Boost KIR2DS1 (+1.5):** Donatore con KIR2DS1 **armato/educato** (ambiente C1/C1 o C1/C2) che riconosce un ricevente **C2+**.
             """)
 
         def get_excel_label(kir_name):
