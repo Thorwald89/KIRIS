@@ -183,7 +183,7 @@ def assess_donor_education(don_kir, don_ligs, don_b_alleles, don_c_alleles, kir3
         k2ds1_label = ("C1/C2" if 'C1' in don_c_ligs else "C2/C2") if 'C2' in don_c_ligs else "C1/C1"
         res.append({'KIR': 'KIR2DS1', 'Lig': f"Locus C ({k2ds1_label})", 'Status': "Pos", 'Edu': k2ds1_edu})
 
-    # 7. KIR3DL2 (Standard, senza legame errato al codone 86)
+    # 7. KIR3DL2 (Standard)
     k3dl2_pos = "KIR3DL2" in don_kir
     has_a3_a11 = "A3/A11" in don_ligs
     if not k3dl2_pos:
