@@ -14,7 +14,7 @@ from src.kir_analysis import (
 st.set_page_config(page_title="KIRIS PRO - Alloreattività NK & Immunogenetica", page_icon="🧬", layout="wide")
 
 st.title("🧬 KIRis PRO: Alloreactivity & Immunogenetics Toolkit")
-st.markdown("**Versione Validata ISO 13485** con eccezione $B*13$ anergica (Leucina-80), B-Content e vettori di alloreattività.")
+st.markdown("**Versione Validata ISO 13485** con eccezione $B*13$ anergica (Leucina-80), controllo qualità *KIR3DL1* Null (*004), B-Content e vettori di alloreattività.")
 
 tab1, tab2 = st.tabs([
     "📊 Analisi Alloreattività & Vettori Clinici", 
@@ -37,7 +37,7 @@ with tab1:
         don_c = st.text_input("Don HLA-C", "C*03:01,C*08:01")
 
     st.markdown("---")
-    st.subheader("3. Assetto Genico KIR Donatore (16 Loci)")
+    st.subheader("3. Assetto Genico KIR Donatore (16 Loci) & Controllo Qualità")
     
     col_cen, col_tel = st.columns(2)
     default_selected = {'KIR3DL3', 'KIR2DP1', 'KIR2DL1', 'KIR2DL3', 'KIR3DP1', 'KIR2DL4', 'KIR3DL1', 'KIR2DS4', 'KIR3DL2'}
@@ -50,7 +50,13 @@ with tab1:
         selected_tel = [g for g in TEL_GENES if st.checkbox(g, value=(g in default_selected), key=f"cb_{g}")]
 
     selected_kir = set(selected_cen + selected_tel)
-    codon_86 = st.checkbox("KIR3DL2: Presenza Codone 86 (SSP)", value=False)
+    
+    # Controlli di qualità e varianti particolari (Codone 86 e KIR3DL1 *004 Null)
+    col_qc1, col_qc2 = st.columns(2)
+    with col_qc1:
+        codon_86 = st.checkbox("KIR3DL2: Presenza Codone 86 (SSP)", value=False, help="Se attivo, segnala variante intrappolata 86+ (Non Educato).")
+    with col_qc2:
+        kir3dl1_null = st.checkbox("KIR3DL1: Variante Null / ER-trapped (*004)", value=False, help="Se attivo, esclude KIR3DL1 dal licensing di superficie (segnale Null).")
 
     if st.button("🚀 Esegui Analisi Completa KIRis", type="primary"):
         try:
@@ -71,7 +77,9 @@ with tab1:
         r_ligs = map_hla_to_ligands(r_c, r_b, r_a)
         d_ligs = map_hla_to_ligands(d_c, d_b, d_a)
         haplo, b_score, cen_h, tel_h = calculate_b_content_logic(selected_kir)
-        edu_res = assess_donor_education(selected_kir, d_ligs, d_b, d_c, codon_86)
+        
+        # Passiamo il flag KIR3DL1 Null alla funzione di educazione
+        edu_res = assess_donor_education(selected_kir, d_ligs, d_b, d_c, codon_86, kir3dl1_null_variant=kir3dl1_null)
 
         k2ds1_edu_status = next((x['Edu'] for x in edu_res if x['KIR'] == 'KIR2DS1'), "N/A")
         gvh_sc, gvh_s, gvh_c, hvg_sc, hvg_s, hvg_c, gvl_sc, gvl_s, gvl_c = calculate_vectors_quantitative(
@@ -85,7 +93,7 @@ with tab1:
             ("3DL3", "KIR3DL3", "FW"), ("2DS2", "KIR2DS2", ""), ("2DL2", "KIR2DL2", ""),
             ("2DL3", "KIR2DL3", ""), ("2DS3", "KIR2DS3", ""), ("2DP1", "KIR2DP1", "Ψ"),
             ("2DL1", "KIR2DL1", ""), ("3DP1", "KIR3DP1", "Ψ"), ("2DL4", "KIR2DL4", "FW"),
-            ("3DL1", "KIR3DL1", ""), ("3DS1", "KIR3DS1", ""), ("2DL5A", "KIR2DL5A", ""),
+            ("3DL1", "KIR3DL1", "Null" if kir3dl1_null else ""), ("3DS1", "KIR3DS1", ""), ("2DL5A", "KIR2DL5A", ""),
             ("2DL5B", "KIR2DL5B", ""), ("2DS5", "KIR2DS5", ""), ("2DS1", "KIR2DS1", ""),
             ("2DS4", "KIR2DS4", ""), ("3DL2", "KIR3DL2", "FW")
         ]
@@ -165,8 +173,9 @@ with tab1:
               * **C1 + KIR2DL2:** Interazione a media affinità per il gruppo C1 (Asparagina-80).
             * **🟠 Licensing Debole (Low-Affinity):**
               * **C1 + KIR2DL3:** Interazione molecolare a più bassa affinità per HLA-C1 rispetto a KIR2DL2.
-            * **🔴 Anergico / No Licensing (Null):**
-              * **Bw4-Leu80 ($B*13$):** La sostituzione con Leucina al residuo 80 modifica la conformazione α1 dell'HLA, impedendo il legame inibitorio con KIR3DL1 e lasciando i linfociti NK non-licenziati/anergici.
+            * **🔴 Anergico / No Licensing (Null / ER-trapped):**
+              * **KIR3DL1\*004 (Null):** Difetto di ripiegamento che intrappola la proteina nel reticolo endoplasmatico; recettore non espresso in superficie.
+              * **Bw4-Leu80 ($B*13$):** La sostituzione con Leucina al residuo 80 modifica la conformazione α1 dell'HLA, impedendo il legame inibitorio con KIR3DL1.
               * **Bw6 (No KIR):** L'epitopo Bw6 non possiede alcun recettore KIR inibitorio o attivatorio corrispondente.
 
             ---

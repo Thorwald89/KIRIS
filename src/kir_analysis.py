@@ -105,17 +105,19 @@ def calculate_b_content_logic(kir_set):
     b_score = cen_pts + tel_pts
     return ("A/A" if b_score == 0 else "B/X"), b_score, cen_h, tel_h
 
-def assess_donor_education(don_kir, don_ligs, don_b_alleles, don_c_alleles, codon_86_present):
+def assess_donor_education(don_kir, don_ligs, don_b_alleles, don_c_alleles, codon_86_present, kir3dl1_null_variant=False):
     """
     Calcolo dell'educazione NK basato sul Rheostat Model.
-    Sintassi: 'Educato (Forte/Moderato/Debole)' oppure 'Non Educato (Anergico)'
+    Include il controllo di qualità per KIR3DL1*004 (ER-trapped / Null surface expression).
     """
     res = []
     has_b13_anergic = any(x in don_b_alleles for x in ['B*13:01', 'B*13:02'])
 
-    # 1. KIR3DL1 / Bw4 System
+    # 1. KIR3DL1 / Bw4 System con controllo variante Null (es. *004)
     if "KIR3DL1" in don_kir:
-        if "Bw4-I80" in don_ligs:
+        if kir3dl1_null_variant:
+            edu = "Non Espresso (ER-trapped / Null - *004)"
+        elif "Bw4-I80" in don_ligs:
             edu = "Educato (Forte - High-Affinity I80)"
         elif "Bw4-T80" in don_ligs:
             edu = "Educato (Moderato - Interm-Affinity T80)"
@@ -123,7 +125,7 @@ def assess_donor_education(don_kir, don_ligs, don_b_alleles, don_c_alleles, codo
             edu = "Non Educato (Anergico - B*13 Leu80)"
         else:
             edu = "Non Educato (Anergico)"
-        res.append({'KIR': 'KIR3DL1', 'Lig': 'Bw4', 'Status': 'Pos', 'Edu': edu})
+        res.append({'KIR': 'KIR3DL1', 'Lig': 'Bw4', 'Status': 'Pos (*004 Null)' if kir3dl1_null_variant else 'Pos', 'Edu': edu})
     else:
         res.append({'KIR': 'KIR3DL1', 'Lig': 'Bw4', 'Status': 'Neg', 'Edu': 'N/A'})
 
@@ -198,7 +200,7 @@ def calculate_vectors_quantitative(edu_results, don_ligs, rec_ligs, haplo, b_sco
     d_clean = {x.split('-')[0] for x in don_ligs}
     r_clean = {x.split('-')[0] for x in rec_ligs}
 
-    # Consideriamo per il GvH solo le NK realmente educate
+    # Consideriamo per il GvH solo le NK realmente educate (escludendo i null/anergici)
     educated_rows = [
         r for r in edu_results 
         if "Educato" in r['Edu']
