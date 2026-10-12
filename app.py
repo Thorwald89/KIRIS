@@ -51,12 +51,8 @@ with tab1:
 
     selected_kir = set(selected_cen + selected_tel)
     
-    # Controlli di qualità e varianti particolari (Codone 86 e KIR3DL1 *004 Null)
-    col_qc1, col_qc2 = st.columns(2)
-    with col_qc1:
-        codon_86 = st.checkbox("KIR3DL2: Presenza Codone 86 (SSP)", value=False, help="Se attivo, segnala variante intrappolata 86+ (Non Educato).")
-    with col_qc2:
-        kir3dl1_null = st.checkbox("KIR3DL1: Variante Null / ER-trapped (*004)", value=False, help="Se attivo, esclude KIR3DL1 dal licensing di superficie (segnale Null).")
+    # Unico controllo di qualità pulito sul KIR3DL1 Null (*004)
+    kir3dl1_null = st.checkbox("KIR3DL1: Variante Null / ER-trapped (*004)", value=False, help="Se attivo, esclude KIR3DL1 dal licensing di superficie (segnale Null).")
 
     if st.button("🚀 Esegui Analisi Completa KIRis", type="primary"):
         try:
@@ -78,8 +74,8 @@ with tab1:
         d_ligs = map_hla_to_ligands(d_c, d_b, d_a)
         haplo, b_score, cen_h, tel_h = calculate_b_content_logic(selected_kir)
         
-        # Passiamo il flag KIR3DL1 Null alla funzione di educazione
-        edu_res = assess_donor_education(selected_kir, d_ligs, d_b, d_c, codon_86, kir3dl1_null_variant=kir3dl1_null)
+        # Chiamata alla funzione aggiornata senza codone 86
+        edu_res = assess_donor_education(selected_kir, d_ligs, d_b, d_c, kir3dl1_null_variant=kir3dl1_null)
 
         k2ds1_edu_status = next((x['Edu'] for x in edu_res if x['KIR'] == 'KIR2DS1'), "N/A")
         gvh_sc, gvh_s, gvh_c, hvg_sc, hvg_s, hvg_c, gvl_sc, gvl_s, gvl_c = calculate_vectors_quantitative(
@@ -163,19 +159,19 @@ with tab1:
         with st.expander("📖 Legenda, Stratificazione Funzionale e Logica dei Vettori"):
             st.markdown("""
             ### 1. Stratificazione Graduata dell'Educazione NK (*Rheostat Model*)
-            L'educazione NK non è un fenomeno binario (ON/OFF), ma segue il **Rheostat Model** (Joncker et al., *Blood*), in cui l'affinità chimico-fisica del legame KIR-HLA determina il potenziale citotossico dell'NK in caso di *missing-self*.
+            L'educazione NK non è un fenomeno binario (ON/OFF), ma segue il **Rheostat Model** (Joncker et al.), in cui l'affinità chimico-fisica del legame KIR-HLA determina il potenziale citotossico dell'NK in caso di *missing-self*.
 
             * **🟢 Licensing Forte (High-Affinity):**
-              * **Bw4-Ile80 + KIR3DL1:** Presenza di Isoleucina al residuo 80 dell'HLA-B/A. Assicura una costante di affinità ($K_d$) ottimale, conferendo massima degranulazione (CD107a) ed espressione di Perforina/Granzyme B.
+              * **Bw4-Ile80 + KIR3DL1:** Presenza di Isoleucina al residuo 80 dell'HLA-B/A. Assicura una costante di affinità ottimale, conferendo massima degranulazione ed espressione di Perforina/Granzyme B.
               * **C2 + KIR2DL1:** L'interazione con Lisina-80 genera la risposta inibitoria/licensing più solida nel sistema HLA-C.
             * **🟡 Licensing Moderato / Intermedio (Intermediate-Affinity):**
               * **Bw4-Thr80 + KIR3DL1:** La presenza di Treonina al residuo 80 induce un legame meno stabile con KIR3DL1; l'educazione è parziale ed eroga un potenziale alloreattivo intermedio.
-              * **C1 + KIR2DL2:** Interazione a media affinità per il gruppo C1 (Asparagina-80).
+              * **C1 + KIR2DL2:** Interazione a media affinità per il gruppo C1.
             * **🟠 Licensing Debole (Low-Affinity):**
               * **C1 + KIR2DL3:** Interazione molecolare a più bassa affinità per HLA-C1 rispetto a KIR2DL2.
             * **🔴 Anergico / No Licensing (Null / ER-trapped):**
               * **KIR3DL1\*004 (Null):** Difetto di ripiegamento che intrappola la proteina nel reticolo endoplasmatico; recettore non espresso in superficie.
-              * **Bw4-Leu80 ($B*13$):** La sostituzione con Leucina al residuo 80 modifica la conformazione α1 dell'HLA, impedendo il legame inibitorio con KIR3DL1.
+              * **Bw4-Leu80 ($B*13$):** La sostituzione con Leucina al residuo 80 impedisce il legame inibitorio con KIR3DL1.
               * **Bw6 (No KIR):** L'epitopo Bw6 non possiede alcun recettore KIR inibitorio o attivatorio corrispondente.
 
             ---
@@ -186,17 +182,16 @@ with tab1:
               * **2-5 (Incrementale):** Mismatch inibitorio basato su recettori KIR del donatore **fortemente o moderatamente educati**, unito al rischio potenziale da KIR attivatori (es. KIR2DS1).
             * **🛡️ Vettore HvG (Host-vs-Graft / Rischio Rigetto):**
               * **1/5 (Nullo):** Nessun mismatch verso l'innesto.
-              * **2-5 (Incrementale):** Assenza nel donatore di un ligando espresso dal ricevente (es. *Manca C2* o *Manca Bw4*), con potenziale attivazione da NK residue dell'ospite contro il trapianto.
+              * **2-5 (Incrementale):** Assenza nel donatore di un ligando espresso dal ricevente.
             * **🎯 Vettore GvL (Graft-vs-Leukemia / Effetto Anti-Leucemico):**
               * **Missing-Self:** Assenza nel ricevente di ligandi inibitori correlati a KIR licenziati nel donatore.
               * **Boost Aplotipo B (+1.0):** Elevata presenza di loci attivatori centromerici o telomerici nel genoma del donatore.
-              * **Boost KIR2DS1 (+1.5):** Donatore con KIR2DS1 **armato/educato** (ambiente C1/C1 o C1/C2) che riconosce un ricevente **C2+**.
+              * **Boost KIR2DS1 (+1.5):** Donatore con KIR2DS1 **armato/educato** che riconosce un ricevente **C2+**.
             """)
 
         def get_excel_label(kir_name):
             match_kir = next((x for x in edu_res if x['KIR'] == kir_name), None)
             if not match_kir or match_kir['Status'] == 'Neg': return "NEG"
-            if kir_name == 'KIR3DL2': return "POS +L" if match_kir['Edu'] == 'Educato' else "POS"
             return "POS, E" if ('Educato' in match_kir['Edu'] or match_kir['Edu'] == 'Educato/Responsive') else "POS, NE"
 
         excel_row_string = f"{haplo}\t{b_score}\t{get_excel_label('KIR3DL1')}\t{get_excel_label('KIR2DL1')}\t{get_excel_label('KIR2DL2')}\t{get_excel_label('KIR2DL3')}\t{get_excel_label('KIR2DS1')}\t{get_excel_label('KIR3DL2')}\t{gvh_sc}\t{hvg_sc}\t{gvl_sc}"

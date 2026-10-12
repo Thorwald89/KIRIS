@@ -105,7 +105,7 @@ def calculate_b_content_logic(kir_set):
     b_score = cen_pts + tel_pts
     return ("A/A" if b_score == 0 else "B/X"), b_score, cen_h, tel_h
 
-def assess_donor_education(don_kir, don_ligs, don_b_alleles, don_c_alleles, codon_86_present, kir3dl1_null_variant=False):
+def assess_donor_education(don_kir, don_ligs, don_b_alleles, don_c_alleles, kir3dl1_null_variant=False):
     """
     Calcolo dell'educazione NK basato sul Rheostat Model.
     Include il controllo di qualità per KIR3DL1*004 (ER-trapped / Null surface expression).
@@ -183,7 +183,7 @@ def assess_donor_education(don_kir, don_ligs, don_b_alleles, don_c_alleles, codo
         k2ds1_label = ("C1/C2" if 'C1' in don_c_ligs else "C2/C2") if 'C2' in don_c_ligs else "C1/C1"
         res.append({'KIR': 'KIR2DS1', 'Lig': f"Locus C ({k2ds1_label})", 'Status': "Pos", 'Edu': k2ds1_edu})
 
-    # 7. KIR3DL2 (Codone 86)
+    # 7. KIR3DL2 (Standard, senza legame errato al codone 86)
     k3dl2_pos = "KIR3DL2" in don_kir
     has_a3_a11 = "A3/A11" in don_ligs
     if not k3dl2_pos:
@@ -191,7 +191,7 @@ def assess_donor_education(don_kir, don_ligs, don_b_alleles, don_c_alleles, codo
     elif not has_a3_a11:
         k3dl2_edu = "Non Educato (Anergico)"
     else:
-        k3dl2_edu = "Non Educato (Anergico - Intrappolato 86+)" if codon_86_present else "Educato (Debole - Codone 86-)"
+        k3dl2_edu = "Educato (Debole - HLA-A3/A11)"
     res.append({'KIR': 'KIR3DL2', 'Lig': 'A3/A11', 'Status': "Pos" if k3dl2_pos else "Neg", 'Edu': k3dl2_edu})
 
     return res
@@ -200,7 +200,6 @@ def calculate_vectors_quantitative(edu_results, don_ligs, rec_ligs, haplo, b_sco
     d_clean = {x.split('-')[0] for x in don_ligs}
     r_clean = {x.split('-')[0] for x in rec_ligs}
 
-    # Consideriamo per il GvH solo le NK realmente educate (escludendo i null/anergici)
     educated_rows = [
         r for r in edu_results 
         if "Educato" in r['Edu']
@@ -212,7 +211,6 @@ def calculate_vectors_quantitative(edu_results, don_ligs, rec_ligs, haplo, b_sco
         if lig_type in d_clean and lig_type not in r_clean:
             gvh_mismatches.append(r['KIR'])
 
-    # Scoring GvH
     if not gvh_mismatches: 
         gvh_score, gvh_status, gvh_color = 1, "Nullo / Trascurabile", "#27ae60"
     elif len(gvh_mismatches) == 1: 
@@ -222,7 +220,6 @@ def calculate_vectors_quantitative(edu_results, don_ligs, rec_ligs, haplo, b_sco
     else: 
         gvh_score, gvh_status, gvh_color = 4, "Alto Rischio GVHD", "#e74c3c"
 
-    # Scoring HvG
     hvg_mismatches = [lig for lig in r_clean if lig not in d_clean and lig != 'Bw6']
     if not hvg_mismatches: 
         hvg_score, hvg_status, hvg_color = 1, "Nullo (Graft protetto)", "#27ae60"
@@ -231,7 +228,6 @@ def calculate_vectors_quantitative(edu_results, don_ligs, rec_ligs, haplo, b_sco
     else: 
         hvg_score, hvg_status, hvg_color = 5, "Massimo Rischio Rigetto Graft", "#e74c3c"
 
-    # Scoring GvL con peso del Rheostat
     gvl_points = 1.0
     reasons = []
     if gvh_mismatches: 
