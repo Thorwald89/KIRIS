@@ -14,7 +14,7 @@ C1_ALLELES_PREFIXES = {'01', '03', '07', '08', '12', '14', '16'}
 C2_ALLELES_PREFIXES = {'02', '04', '05', '06', '09', '10', '15', '17', '18'}
 A3_A11_ALLELES = {'03', '11'}
 
-# Affinità Rheostat Model per HLA-Bw4
+# Affinità Rheostat Model per HLA-Bw4 (Classificazione dettagliata dei residui in posizione 80)
 Bw4_I80_PREFIXES = {'05', '17', '27', '37', '47', '49', '51', '52', '53', '57', '58', '59', '63', '77', '23', '24', '25', '32', '09'}
 Bw4_T80_PREFIXES = {'38', '44'}
 
@@ -79,15 +79,15 @@ def map_hla_to_ligands(hla_c, hla_b, hla_a):
 
     for a in hla_b:
         if any(exc in a for exc in B13_ANERGIC_EXCEPTIONS): 
-            ligs.add('Bw4-L80')
+            ligs.add('Bw4-L80')  # Eccezione Leucina-80 (Anergica)
         elif any(exc in a for exc in Bw4_EXCEPTIONS): 
-            ligs.add('Bw4-I80')
+            ligs.add('Bw4-I80')  # Isoleucina-80 (Alta affinità)
         elif any(exc in a for exc in Bw6_EXCEPTIONS): 
             ligs.add('Bw6')
         else:
             p = extract_allele_number(a)
             if p in Bw4_I80_PREFIXES: ligs.add('Bw4-I80')
-            elif p in Bw4_T80_PREFIXES: ligs.add('Bw4-T80')
+            elif p in Bw4_T80_PREFIXES: ligs.add('Bw4-T80')  # Treonina-80 (Media affinità)
             else: ligs.add('Bw6')
 
     BW4_A_ALLELES = {'A*23:01', 'A*24:02', 'A*24:03', 'A*25:01', 'A*32:01'}
@@ -116,24 +116,29 @@ def calculate_b_content_logic(kir_set):
 def assess_donor_education(don_kir, don_ligs, don_b_alleles, don_c_alleles, kir3dl1_null_variant=False):
     """
     Calcolo dell'educazione NK basato sul Rheostat Model.
-    Include la gestione aggiornata per KIR3DL2 ('Presenza di ligando') e C*16.
+    Include l'indicazione puntuale dei residui Bw4 (Isoleucina-80, Treonina-80, Leucina-80).
     """
     res = []
     has_b13_anergic = any(x in don_b_alleles for x in ['B*13:01', 'B*13:02'])
 
-    # 1. KIR3DL1 / Bw4 System
+    # 1. KIR3DL1 / Bw4 System con dettaglio dei residui (I80 / T80 / L80)
     if "KIR3DL1" in don_kir:
         if kir3dl1_null_variant:
             edu = "Non Espresso (ER-trapped / Null - *004)"
+            lig_detail = "Bw4 (Null Variant)"
         elif "Bw4-I80" in don_ligs:
-            edu = "Educato (Forte - High-Affinity I80)"
+            edu = "Educato (Forte - High-Affinity Isoleucina-80)"
+            lig_detail = "Bw4 (Isoleucina-80 / I80)"
         elif "Bw4-T80" in don_ligs:
-            edu = "Educato (Moderato - Interm-Affinity T80)"
+            edu = "Educato (Moderato - Interm-Affinity Treonina-80)"
+            lig_detail = "Bw4 (Treonina-80 / T80)"
         elif has_b13_anergic or "Bw4-L80" in don_ligs:
-            edu = "Non Educato (Anergico - B*13 Leu80)"
+            edu = "Non Educato (Anergico - B*13 Leucina-80)"
+            lig_detail = "Bw4 (Leucina-80 / L80 - B*13)"
         else:
             edu = "Non Educato (Anergico)"
-        res.append({'KIR': 'KIR3DL1', 'Lig': 'Bw4', 'Status': 'Pos (*004 Null)' if kir3dl1_null_variant else 'Pos', 'Edu': edu})
+            lig_detail = "Assente / Bw6"
+        res.append({'KIR': 'KIR3DL1', 'Lig': lig_detail, 'Status': 'Pos (*004 Null)' if kir3dl1_null_variant else 'Pos', 'Edu': edu})
     else:
         res.append({'KIR': 'KIR3DL1', 'Lig': 'Bw4', 'Status': 'Neg', 'Edu': 'N/A'})
 
@@ -191,7 +196,7 @@ def assess_donor_education(don_kir, don_ligs, don_b_alleles, don_c_alleles, kir3
         k2ds1_label = ("C1/C2" if 'C1' in don_c_ligs else "C2/C2") if 'C2' in don_c_ligs else "C1/C1"
         res.append({'KIR': 'KIR2DS1', 'Lig': f"Locus C ({k2ds1_label})", 'Status': "Pos", 'Edu': k2ds1_edu})
 
-    # 7. KIR3DL2 (Aggiornato con la specifica "Presenza di ligando")
+    # 7. KIR3DL2 (Presenza di ligando)
     k3dl2_pos = "KIR3DL2" in don_kir
     has_a3_a11 = "A3/A11" in don_ligs
     if not k3dl2_pos:
