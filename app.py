@@ -14,7 +14,7 @@ from src.kir_analysis import (
 st.set_page_config(page_title="KIRIS PRO - Alloreattività NK & Immunogenetica", page_icon="🧬", layout="wide")
 
 st.title("🧬 KIRis PRO: Alloreactivity & Immunogenetics Toolkit")
-st.markdown("**Versione Validata ISO 13485** con eccezione $B*13$ anergica (Leucina-80), controllo qualità *KIR3DL1* Null (*004), B-Content e vettori di alloreattività.")
+st.markdown("**Versione in corso di Validazione ISO 13485**,Release 0.1.")
 
 tab1, tab2 = st.tabs([
     "📊 Analisi Alloreattività & Vettori Clinici", 
