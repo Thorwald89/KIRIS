@@ -1,4 +1,11 @@
+"""
+KIRIS PRO - Deterministic Clinical Rules Engine for KIR-HLA Alloreactivity
+Module: kir_analysis.py
+Compliance: ISO 13485 (Deterministic calculations, no stochastic/probabilistic models)
+"""
+
 import re
+import pandas as pd
 
 # Standard ISO 13485 e Pattern
 HLA_REGEX = re.compile(r'^[A-C]\*[0-9]{2,3}:[0-9]{2,3}$')
@@ -54,8 +61,9 @@ def extract_allele_number(allele):
 
 def map_hla_to_ligands(hla_c, hla_b, hla_a):
     ligs = set()
-    C2_SPECIFIC = {'C*16:02', 'C*16:04', 'C*12:04'}
-    C1_SPECIFIC = {'C*16:01', 'C*12:02', 'C*12:03'}
+    # Aggiornamento immunogenetico C*16: C*16:01 e C*16:04 sono C1, C*16:02 è C2
+    C2_SPECIFIC = {'C*16:02', 'C*12:04'}
+    C1_SPECIFIC = {'C*16:01', 'C*16:04', 'C*12:02', 'C*12:03'}
 
     for a in hla_c:
         if any(exc in a for exc in C2_SPECIFIC): ligs.add('C2')
@@ -108,12 +116,12 @@ def calculate_b_content_logic(kir_set):
 def assess_donor_education(don_kir, don_ligs, don_b_alleles, don_c_alleles, kir3dl1_null_variant=False):
     """
     Calcolo dell'educazione NK basato sul Rheostat Model.
-    Include il controllo di qualità per KIR3DL1*004 (ER-trapped / Null surface expression).
+    Include la gestione aggiornata per KIR3DL2 ('Presenza di ligando') e C*16.
     """
     res = []
     has_b13_anergic = any(x in don_b_alleles for x in ['B*13:01', 'B*13:02'])
 
-    # 1. KIR3DL1 / Bw4 System con controllo variante Null (es. *004)
+    # 1. KIR3DL1 / Bw4 System
     if "KIR3DL1" in don_kir:
         if kir3dl1_null_variant:
             edu = "Non Espresso (ER-trapped / Null - *004)"
@@ -159,15 +167,15 @@ def assess_donor_education(don_kir, don_ligs, don_b_alleles, don_c_alleles, kir3
     has_bw6 = "Bw6" in don_ligs
     res.append({'KIR': '— (No KIR)', 'Lig': 'Bw6', 'Status': "Presente" if has_bw6 else "Assente", 'Edu': "N/A (Neutro)"})
 
-    # 6. KIR2DS1 (Attivatorio Educato / Hyperexcitable)
+    # 6. KIR2DS1 (Attivatorio)
     k2ds1_pos = "KIR2DS1" in don_kir
     if not k2ds1_pos:
         res.append({'KIR': 'KIR2DS1', 'Lig': 'C1/C2', 'Status': "Neg", 'Edu': "N/A"})
     else:
         don_c_ligs = set()
         for a in don_c_alleles:
-            if any(exc in a for exc in ['C*16:02', 'C*16:04', 'C*12:04']): don_c_ligs.add('C2')
-            elif any(exc in a for exc in ['C*16:01', 'C*12:02', 'C*12:03']): don_c_ligs.add('C1')
+            if any(exc in a for exc in ['C*16:02', 'C*12:04']): don_c_ligs.add('C2')
+            elif any(exc in a for exc in ['C*16:01', 'C*16:04', 'C*12:02', 'C*12:03']): don_c_ligs.add('C1')
             else:
                 p = extract_allele_number(a)
                 if p in C1_ALLELES_PREFIXES: don_c_ligs.add('C1')
@@ -183,15 +191,16 @@ def assess_donor_education(don_kir, don_ligs, don_b_alleles, don_c_alleles, kir3
         k2ds1_label = ("C1/C2" if 'C1' in don_c_ligs else "C2/C2") if 'C2' in don_c_ligs else "C1/C1"
         res.append({'KIR': 'KIR2DS1', 'Lig': f"Locus C ({k2ds1_label})", 'Status': "Pos", 'Edu': k2ds1_edu})
 
-    # 7. KIR3DL2 (Standard)
+    # 7. KIR3DL2 (Aggiornato con la specifica "Presenza di ligando")
     k3dl2_pos = "KIR3DL2" in don_kir
     has_a3_a11 = "A3/A11" in don_ligs
     if not k3dl2_pos:
         k3dl2_edu = "N/A"
-    elif not has_a3_a11:
-        k3dl2_edu = "Non Educato (Anergico)"
+    elif has_a3_a11:
+        k3dl2_edu = "Presenza di ligando (A*03/A*11)"
     else:
-        k3dl2_edu = "Educato (Debole - HLA-A3/A11)"
+        k3dl2_edu = "Assenza di ligando specifico"
+        
     res.append({'KIR': 'KIR3DL2', 'Lig': 'A3/A11', 'Status': "Pos" if k3dl2_pos else "Neg", 'Edu': k3dl2_edu})
 
     return res
@@ -202,7 +211,7 @@ def calculate_vectors_quantitative(edu_results, don_ligs, rec_ligs, haplo, b_sco
 
     educated_rows = [
         r for r in edu_results 
-        if "Educato" in r['Edu']
+        if "Educato" in r['Edu'] or "Presenza di ligando" in r['Edu']
     ]
     
     gvh_mismatches = []
