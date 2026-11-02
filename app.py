@@ -21,7 +21,7 @@ from src.kir_analysis import (
     CEN_GENES, TEL_GENES, FRAMEWORK_GENES
 )
 
-st.set_page_config(page_title="KIRIS PRO - Alloreattività NK & Immunogenetica", page_icon="🧬", layout="wide")
+st.set_page_config(page_title="KIRIS - Alloreattività NK & Immunogenetica", page_icon="🧬", layout="wide")
 
 # ==============================================================================
 # CONFIGURAZIONE TEMA GRAFICO (DARK / LIGHT THEME TOGGLE)
@@ -100,8 +100,52 @@ st.markdown(f"""
 </style>
 """, unsafe_allow_html=True)
 
-st.title("🧬 KIRis PRO: Alloreactivity & Immunogenetics Toolkit")
-st.markdown("**Versione Conforme a Validazione Deterministica ISO 13485**, Release 0.4.")
+# ==============================================================================
+# MODALE POPUP LIGHTBOX: NOTE DI RILASCIO & CHANGELOG
+# ==============================================================================
+@st.dialog("📋 Note di Rilascio & Cronologia Versioni (KIRIS Release Notes)", width="large")
+def show_release_notes():
+    st.markdown(r"""
+    ### 🧬 KIRIS — Cronologia Versioni & Registro Modifiche
+
+    ---
+    #### 🚀 Release 0.4 (Versione Attuale)
+    * **Identità Software & UI Unificata:** rebranding ufficiale in **KIRIS** (KIR Interpretation Software).
+    * **Supporto Completo Dark Mode / Light Mode:** selettore integrato con palette cromatica ad alto contrasto per schermi e ambienti operativi scuri/neri.
+    * **Nuovo Radar Chart Polare ad Alta Risoluzione:** visualizzazione geometrica dei 3 vettori (*GvH*, *HvG*, *GvL*) isolata su canvas nativo, con griglia polare a 5 livelli sfumati, assi radiali e badge vettoriali luminescenti.
+    * **Mappa Cromosomica a Colori Funzionali:** categorizzazione cromatica dei 17 loci (*Inibitori 🔵*, *Attivatori 🟢*, *Framework Costitutivi 🟣*, *Pseudogeni ⚪*) con demarcatore centrale dell'hotspot di ricombinazione centromerico/telomerico.
+    * **Pulsanti Aplotipo KIR Dinamici:** sincronizzazione bidirezionale istantanea tra i pulsanti di scelta rapida e le 16 checkbox dei loci KIR del donatore.
+    * **Donor Recommendation Score (Consensus EBMT/GITMO):** sintetizzatore decisionale clinico per la graduazione del donatore (*Priorità Elevata*, *Favorevole*, *Standard*, *Subottimale*).
+
+    ---
+    #### 🔬 Release 0.3
+    * **Analisi Coorte Batch (CSV/Excel):** pipeline di elaborazione per coorti di coppie con report arricchito ed esportazione con codifica UTF-8 BOM.
+    * **Grafici Interattivi di Coorte Altair:** istogramma di distribuzione dell'effetto $GvL$ e matrice decisionale bidimensionale $GvL$ vs $HvG$.
+    * **Auto-Mappatura Colonne:** parser tollerante a intestazioni cliniche eterogenee.
+
+    ---
+    #### 🧬 Release 0.2
+    * **Modello Molecolare KIR2DS1:** stratificazione precisa dell'educazione/tolleranza (*Hyperexcitable* in $C1/C1$, *Responsivo* in $C1/C2$, *Anergico* in $C2/C2$).
+    * **Condizione Target Ricevente per GvL:** attivazione dell'effetto protettivo anti-leucemico di $KIR2DS1$ vincolata alla presenza del ligando bersaglio $C2$ nel ricevente.
+    * **Ponderazione Continua del Rheostat Model:** pesatura differenziata per affinità alta ($Bw4\text{-}I80$, $C2$), media ($Bw4\text{-}T80$, $C1/2DL2$) e debole ($C1/2DL3$).
+    * **B-Content Score Scalare (Cooley Model):** integrazione dei punteggi 0, 1, 2, $\ge 3$ con motivi centromerici e telomerici.
+
+    ---
+    #### 🏛️ Release 0.1
+    * Architettura deterministica conforme a criteri ISO 13485 (assenza di modelli stocastici).
+    * Classificazione allelica IMGT/HLA per Loci A, B e C.
+    """)
+    if st.button("Chiudi", use_container_width=True):
+        st.rerun()
+
+st.title("🧬 KIRIS: Alloreactivity & Immunogenetics Toolkit")
+
+col_head_info, col_head_rel = st.columns([3, 1])
+with col_head_info:
+    st.markdown("**Versione Conforme a Validazione Deterministica ISO 13485**")
+with col_head_rel:
+    if st.button("🏷️ Release 0.4 (Note di Rilascio)", help="Clicca per aprire la finestra modale con il changelog dettagliato", use_container_width=True):
+        show_release_notes()
 
 # Definizione aplotipi di riferimento
 APLOTIPO_A_GENES = {'KIR3DL3', 'KIR2DL3', 'KIR2DP1', 'KIR2DL1', 'KIR3DP1', 'KIR2DL4', 'KIR3DL1', 'KIR2DS4', 'KIR3DL2'}
@@ -322,7 +366,7 @@ with tab1:
         
         st.markdown(
             f'<div style="background:linear-gradient(135deg, #1e293b 0%, #0f172a 100%); color:white; border:1px solid #334155; border-radius:12px; padding:20px; margin-bottom:25px;">'
-            f'<h3 style="margin-top:0; color:#38bdf8; font-size:1.15rem;">📊 KIRis: Profilo Immunogenetico della Coppia</h3>'
+            f'<h3 style="margin-top:0; color:#38bdf8; font-size:1.15rem;">📊 KIRIS: Profilo Immunogenetico della Coppia</h3>'
             f'<div style="display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-top:15px;">'
             f'<div style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:8px; padding:15px;">'
             f'<h4 style="margin-top:0; color:#f1f5f9; font-size:0.95rem;">1. Profilo KIR & Struttura Aplotipica (Donatore)</h4>'

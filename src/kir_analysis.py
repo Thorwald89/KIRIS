@@ -1,5 +1,5 @@
 """
-KIRIS PRO - Deterministic Clinical Rules Engine for KIR-HLA Alloreactivity
+KIRIS - Deterministic Clinical Rules Engine for KIR-HLA Alloreactivity
 Module: kir_analysis.py
 Compliance: ISO 13485 (Deterministic calculations, no stochastic/probabilistic models)
 """
