@@ -519,101 +519,129 @@ def calculate_donor_recommendation(gvh_score, hvg_score, gvl_score, haplo, b_sco
         "recommendation": recom
     }
 
-def generate_radar_chart_svg(gvh_score, hvg_score, gvl_score, is_dark=True, width=320, height=270, **kwargs):
+def generate_radar_chart_svg(gvh_score, hvg_score, gvl_score, is_dark=True, width=380, height=310, **kwargs):
     """
-    Genera un Radar Chart SVG puro e moderno a 3 assi (GvH, HvG, GvL) su scala 1-5.
-    Supporta Dark Mode (sfondo scuro ad alto contrasto) e Light Mode.
-    Totalmente reattivo, privo di dipendenze esterne.
+    Genera un Radar Chart SVG professionale a 3 assi (GvH, HvG, GvL) su scala 1-5.
+    Costruito come stringa compatta priva di interruzioni Markdown per garantire rendering perfetto.
+    Supporta Dark Mode ad alto contrasto e Light Mode.
     """
     cx = width / 2.0
-    cy = height / 2.0 + 8.0
-    max_r = min(width, height) * 0.38
+    cy = 142.0
+    max_r = 95.0
 
+    # 3 Assi a 120 gradi: Top (-90°), Bottom-Right (30°), Bottom-Left (150°)
     angles_deg = [-90.0, 30.0, 150.0]
     angles_rad = [math.radians(a) for a in angles_deg]
 
-    def polar_to_cartesian(angle_rad, radius):
+    def p2c(angle_rad, radius):
         return cx + radius * math.cos(angle_rad), cy + radius * math.sin(angle_rad)
 
-    # Impostazioni colore in base al tema
-    bg_color = "#0f172a" if is_dark else "#ffffff"
-    border_color = "#334155" if is_dark else "#e2e8f0"
-    grid_color = "#334155" if is_dark else "#e2e8f0"
-    axis_color = "#475569" if is_dark else "#cbd5e1"
-    grid_txt_color = "#64748b" if is_dark else "#94a3b8"
+    # Palette tema
+    bg_color = "#0f172a" if is_dark else "#f8fafc"
+    card_border = "#334155" if is_dark else "#e2e8f0"
+    grid_stroke = "#334155" if is_dark else "#cbd5e1"
+    axis_stroke = "#475569" if is_dark else "#94a3b8"
+    grid_txt_color = "#94a3b8" if is_dark else "#64748b"
+    alt_fill = "rgba(30, 41, 59, 0.4)" if is_dark else "rgba(241, 245, 249, 0.8)"
+
+    # Poligoni concentrici di sfondo da 5 a 1
+    grid_elements = []
+    for step in range(5, 0, -1):
+        r = (step / 5.0) * max_r
+        pts = [p2c(a, r) for a in angles_rad]
+        pts_str = " ".join(f"{x:.1f},{y:.1f}" for x, y in pts)
+        fill = alt_fill if step % 2 == 1 else "none"
+        grid_elements.append(
+            f'<polygon points="{pts_str}" fill="{fill}" stroke="{grid_stroke}" stroke-width="1.2" stroke-dasharray="3,3"/>'
+        )
+        lx, ly = p2c(angles_rad[0], r)
+        grid_elements.append(
+            f'<text x="{lx + 6:.1f}" y="{ly + 4:.1f}" font-size="9" font-weight="600" fill="{grid_txt_color}" font-family="sans-serif">{step}</text>'
+        )
+
+    # Assi radiali con terminali a pallino
+    axis_elements = []
+    for a in angles_rad:
+        x, y = p2c(a, max_r)
+        axis_elements.append(
+            f'<line x1="{cx:.1f}" y1="{cy:.1f}" x2="{x:.1f}" y2="{y:.1f}" stroke="{axis_stroke}" stroke-width="1.5"/>'
+        )
+        axis_elements.append(
+            f'<circle cx="{x:.1f}" cy="{y:.1f}" r="2" fill="{axis_stroke}"/>'
+        )
+
+    # Poligono dati
+    scores = [float(gvh_score), float(gvl_score), float(hvg_score)]
+    data_pts = []
+    for sc, a in zip(scores, angles_rad):
+        r = (max(1.0, min(5.0, sc)) / 5.0) * max_r
+        data_pts.append(p2c(a, r))
+
+    data_pts_str = " ".join(f"{x:.1f},{y:.1f}" for x, y in data_pts)
+
+    if gvl_score >= 4 and hvg_score <= 2:
+        poly_fill = "rgba(16, 185, 129, 0.45)"
+        poly_stroke = "#10b981"
+        glow_color = "rgba(16, 185, 129, 0.3)"
+    elif hvg_score >= 4:
+        poly_fill = "rgba(239, 68, 68, 0.45)"
+        poly_stroke = "#ef4444"
+        glow_color = "rgba(239, 68, 68, 0.3)"
+    else:
+        poly_fill = "rgba(59, 130, 246, 0.45)"
+        poly_stroke = "#3b82f6"
+        glow_color = "rgba(59, 130, 246, 0.3)"
+
+    data_polygon = (
+        f'<polygon points="{data_pts_str}" fill="{poly_fill}" stroke="{poly_stroke}" '
+        f'stroke-width="3" stroke-linejoin="round" style="filter: drop-shadow(0 0 6px {glow_color});"/>'
+    )
+
+    data_dots = []
+    dot_inner = "#0f172a" if is_dark else "#ffffff"
+    for x, y in data_pts:
+        data_dots.append(
+            f'<circle cx="{x:.1f}" cy="{y:.1f}" r="5.5" fill="{poly_stroke}" stroke="{dot_inner}" stroke-width="2"/>'
+        )
+
+    # Badge ed etichette esterne per i 3 vettori
+    # Top: GvH
+    gvh_x, gvh_y = p2c(angles_rad[0], max_r + 26)
+    # Bottom-Right: GvL
+    gvl_x, gvl_y = p2c(angles_rad[1], max_r + 28)
+    # Bottom-Left: HvG
+    hvg_x, hvg_y = p2c(angles_rad[2], max_r + 28)
+
+    badge_bg = "#1e293b" if is_dark else "#ffffff"
+    badge_border = "#475569" if is_dark else "#cbd5e1"
 
     txt_gvh = "#f8fafc" if is_dark else "#1e293b"
     txt_gvl = "#34d399" if is_dark else "#059669"
     txt_hvg = "#f87171" if is_dark else "#dc2626"
 
-    # Griglia concentrica da 1 a 5
-    grid_lines = []
-    for step in range(1, 6):
-        r = (step / 5.0) * max_r
-        pts = [polar_to_cartesian(a, r) for a in angles_rad]
-        pts_str = " ".join(f"{x:.1f},{y:.1f}" for x, y in pts)
-        grid_lines.append(
-            f'<polygon points="{pts_str}" fill="none" stroke="{grid_color}" stroke-width="1" stroke-dasharray="2,2"/>'
-        )
-        lx, ly = polar_to_cartesian(angles_rad[0], r)
-        grid_lines.append(
-            f'<text x="{lx + 6}" y="{ly + 3}" font-size="9" fill="{grid_txt_color}" font-family="sans-serif">{step}</text>'
-        )
+    labels = [
+        f'<g transform="translate({gvh_x:.1f},{gvh_y:.1f})">'
+        f'<rect x="-65" y="-14" width="130" height="24" rx="12" fill="{badge_bg}" stroke="{badge_border}" stroke-width="1"/>'
+        f'<text x="0" y="2" text-anchor="middle" dominant-baseline="middle" font-size="11" font-weight="700" fill="{txt_gvh}" font-family="system-ui, sans-serif">⚡ GvH: {gvh_score}/5</text>'
+        f'</g>',
+        f'<g transform="translate({gvl_x:.1f},{gvl_y:.1f})">'
+        f'<rect x="-65" y="-14" width="130" height="24" rx="12" fill="{badge_bg}" stroke="{badge_border}" stroke-width="1"/>'
+        f'<text x="0" y="2" text-anchor="middle" dominant-baseline="middle" font-size="11" font-weight="700" fill="{txt_gvl}" font-family="system-ui, sans-serif">🎯 GvL: {gvl_score}/5</text>'
+        f'</g>',
+        f'<g transform="translate({hvg_x:.1f},{hvg_y:.1f})">'
+        f'<rect x="-65" y="-14" width="130" height="24" rx="12" fill="{badge_bg}" stroke="{badge_border}" stroke-width="1"/>'
+        f'<text x="0" y="2" text-anchor="middle" dominant-baseline="middle" font-size="11" font-weight="700" fill="{txt_hvg}" font-family="system-ui, sans-serif">🛡️ HvG: {hvg_score}/5</text>'
+        f'</g>'
+    ]
 
-    axis_lines = []
-    for a in angles_rad:
-        x, y = polar_to_cartesian(a, max_r)
-        axis_lines.append(
-            f'<line x1="{cx}" y1="{cy}" x2="{x}" y2="{y}" stroke="{axis_color}" stroke-width="1.2"/>'
-        )
-
-    # Poligono dati paziente/donatore
-    scores = [float(gvh_score), float(gvl_score), float(hvg_score)]
-    data_pts = []
-    for sc, a in zip(scores, angles_rad):
-        r = (max(1.0, min(5.0, sc)) / 5.0) * max_r
-        data_pts.append(polar_to_cartesian(a, r))
-
-    data_pts_str = " ".join(f"{x:.1f},{y:.1f}" for x, y in data_pts)
-
-    if gvl_score >= 4 and hvg_score <= 2:
-        poly_fill = "rgba(16, 185, 129, 0.45)" if is_dark else "rgba(16, 185, 129, 0.35)"
-        poly_stroke = "#34d399" if is_dark else "#059669"
-    elif hvg_score >= 4:
-        poly_fill = "rgba(239, 68, 68, 0.45)" if is_dark else "rgba(239, 68, 68, 0.35)"
-        poly_stroke = "#f87171" if is_dark else "#dc2626"
-    else:
-        poly_fill = "rgba(59, 130, 246, 0.45)" if is_dark else "rgba(59, 130, 246, 0.35)"
-        poly_stroke = "#60a5fa" if is_dark else "#2563eb"
-
-    data_dots = []
-    dot_stroke = "#0f172a" if is_dark else "#ffffff"
-    for x, y in data_pts:
-        data_dots.append(
-            f'<circle cx="{x:.1f}" cy="{y:.1f}" r="4.5" fill="{poly_stroke}" stroke="{dot_stroke}" stroke-width="1.5"/>'
-        )
-
-    lbl_gvh_x, lbl_gvh_y = polar_to_cartesian(angles_rad[0], max_r + 18)
-    lbl_gvl_x, lbl_gvl_y = polar_to_cartesian(angles_rad[1], max_r + 22)
-    lbl_hvg_x, lbl_hvg_y = polar_to_cartesian(angles_rad[2], max_r + 22)
-
-    svg = f"""
-    <svg width="100%" height="{height}" viewBox="0 0 {width} {height}" xmlns="http://www.w3.org/2000/svg" style="background:{bg_color}; border-radius:12px; border:1px solid {border_color};">
-        <!-- Griglia -->
-        {''.join(grid_lines)}
-        {''.join(axis_lines)}
-        
-        <!-- Poligono Dati -->
-        <polygon points="{data_pts_str}" fill="{poly_fill}" stroke="{poly_stroke}" stroke-width="2.5" stroke-linejoin="round"/>
-        {''.join(data_dots)}
-
-        <!-- Etichette Asse -->
-        <text x="{lbl_gvh_x}" y="{lbl_gvh_y}" text-anchor="middle" font-size="11" font-weight="bold" fill="{txt_gvh}" font-family="sans-serif">⚡ GvH ({gvh_score}/5)</text>
-        <text x="{lbl_gvl_x}" y="{lbl_gvl_y}" text-anchor="middle" font-size="11" font-weight="bold" fill="{txt_gvl}" font-family="sans-serif">🎯 GvL ({gvl_score}/5)</text>
-        <text x="{lbl_hvg_x}" y="{lbl_hvg_y}" text-anchor="middle" font-size="11" font-weight="bold" fill="{txt_hvg}" font-family="sans-serif">🛡️ HvG ({hvg_score}/5)</text>
-    </svg>
-    """
-    return svg
+    # Assemblaggio compatto senza commenti HTML e senza newline multiple
+    svg_body = "".join(grid_elements) + "".join(axis_elements) + data_polygon + "".join(data_dots) + "".join(labels)
+    svg_clean = (
+        f'<svg width="100%" height="{height}" viewBox="0 0 {width} {height}" xmlns="http://www.w3.org/2000/svg" '
+        f'style="background:{bg_color}; border-radius:12px; border:1px solid {card_border}; display:block; margin:auto;">'
+        f'{svg_body}</svg>'
+    )
+    return svg_clean
 
 def format_excel_row(edu_results, haplo, b_score, gvh_sc, hvg_sc, gvl_sc):
     """

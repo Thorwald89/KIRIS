@@ -10,6 +10,7 @@ import src.kir_analysis
 importlib.reload(src.kir_analysis)
 
 import streamlit as st
+import streamlit.components.v1 as components
 import pandas as pd
 import altair as alt
 from src.kir_analysis import (
@@ -351,7 +352,29 @@ with tab1:
         col_radar, col_cards = st.columns([5, 7])
 
         with col_radar:
-            st.markdown(radar_svg, unsafe_allow_html=True)
+            radar_html_wrapped = f"""
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <meta charset="utf-8">
+                <style>
+                    html, body {{
+                        margin: 0;
+                        padding: 0;
+                        background: transparent;
+                        overflow: hidden;
+                        display: flex;
+                        justify-content: center;
+                        align-items: center;
+                    }}
+                </style>
+            </head>
+            <body>
+                {radar_svg}
+            </body>
+            </html>
+            """
+            components.html(radar_html_wrapped, height=325)
 
         with col_cards:
             # Card GvH
