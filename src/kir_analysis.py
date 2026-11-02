@@ -462,7 +462,7 @@ def calculate_vectors_quantitative(edu_results, don_ligs, rec_ligs, haplo, b_sco
 
     return gvh_score, gvh_status, gvh_color, hvg_score, hvg_status, hvg_color, gvl_score, gvl_status, gvl_color
 
-def calculate_donor_recommendation(gvh_score, hvg_score, gvl_score, haplo, b_score, is_dark=True):
+def calculate_donor_recommendation(gvh_score, hvg_score, gvl_score, haplo, b_score, is_dark=True, **kwargs):
     """
     Sintetizzatore decisionale clinico per selezione donatore (Criteri EBMT / GITMO).
     Rilascia una classificazione a 4 livelli con raccomandazione esplicita e palette per dark/light mode.
@@ -519,7 +519,7 @@ def calculate_donor_recommendation(gvh_score, hvg_score, gvl_score, haplo, b_sco
         "recommendation": recom
     }
 
-def generate_radar_chart_svg(gvh_score, hvg_score, gvl_score, is_dark=True, width=320, height=270):
+def generate_radar_chart_svg(gvh_score, hvg_score, gvl_score, is_dark=True, width=320, height=270, **kwargs):
     """
     Genera un Radar Chart SVG puro e moderno a 3 assi (GvH, HvG, GvL) su scala 1-5.
     Supporta Dark Mode (sfondo scuro ad alto contrasto) e Light Mode.
@@ -631,7 +631,7 @@ def format_excel_row(edu_results, haplo, b_score, gvh_sc, hvg_sc, gvl_sc):
         f"{get_excel_label('KIR3DL2')}\t{gvh_sc}\t{hvg_sc}\t{gvl_sc}"
     )
 
-def analyze_single_pair(rec_a, rec_b, rec_c, don_a, don_b, don_c, don_kir_set, kir3dl1_null_variant=False, is_dark=True):
+def analyze_single_pair(rec_a, rec_b, rec_c, don_a, don_b, don_c, don_kir_set, kir3dl1_null_variant=False, is_dark=True, **kwargs):
     """
     Funzione ad alta affidabilità per analizzare una coppia Ricevente-Donatore.
     Utilizzata sia dalla GUI interattiva che dal motore batch di coorte.

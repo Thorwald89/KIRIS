@@ -1,8 +1,13 @@
 import sys
 import os
 import io
+import importlib
 
 sys.path.append(os.path.abspath(os.path.dirname(__file__)))
+
+# Forza il ricaricamento del modulo per prevenire cache stantie su Streamlit Cloud
+import src.kir_analysis
+importlib.reload(src.kir_analysis)
 
 import streamlit as st
 import pandas as pd
@@ -181,13 +186,21 @@ with tab1:
 
     if st.button("🚀 Esegui Analisi Completa KIRis", type="primary", use_container_width=True):
         try:
-            results = analyze_single_pair(
-                rec_a, rec_b, rec_c,
-                don_a, don_b, don_c,
-                selected_kir,
-                kir3dl1_null_variant=kir3dl1_null,
-                is_dark=is_dark
-            )
+            try:
+                results = analyze_single_pair(
+                    rec_a, rec_b, rec_c,
+                    don_a, don_b, don_c,
+                    selected_kir,
+                    kir3dl1_null_variant=kir3dl1_null,
+                    is_dark=is_dark
+                )
+            except TypeError:
+                results = analyze_single_pair(
+                    rec_a, rec_b, rec_c,
+                    don_a, don_b, don_c,
+                    selected_kir,
+                    kir3dl1_null_variant=kir3dl1_null
+                )
         except ValueError as err:
             st.error(f"⚠️ {str(err)}")
             st.stop()
@@ -576,13 +589,21 @@ with tab2:
                         kir_null_val = n_str in ['1', 'TRUE', 'SI', 'YES', 'NULL', 'POS']
 
                     try:
-                        res = analyze_single_pair(
-                            r_a_raw, r_b_raw, r_c_raw,
-                            d_a_raw, d_b_raw, d_c_raw,
-                            don_kir_set,
-                            kir3dl1_null_variant=kir_null_val,
-                            is_dark=is_dark
-                        )
+                        try:
+                            res = analyze_single_pair(
+                                r_a_raw, r_b_raw, r_c_raw,
+                                d_a_raw, d_b_raw, d_c_raw,
+                                don_kir_set,
+                                kir3dl1_null_variant=kir_null_val,
+                                is_dark=is_dark
+                            )
+                        except TypeError:
+                            res = analyze_single_pair(
+                                r_a_raw, r_b_raw, r_c_raw,
+                                d_a_raw, d_b_raw, d_c_raw,
+                                don_kir_set,
+                                kir3dl1_null_variant=kir_null_val
+                            )
 
                         results_batch.append({
                             "ID": current_id,
