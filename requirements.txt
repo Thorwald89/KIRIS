@@ -5,3 +5,4 @@ scipy
 biopython
 requests
 openpyxl
+python-pptx
