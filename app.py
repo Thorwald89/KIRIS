@@ -17,62 +17,87 @@ from src.kir_analysis import (
 
 st.set_page_config(page_title="KIRIS PRO - Alloreattività NK & Immunogenetica", page_icon="🧬", layout="wide")
 
-# Stile CSS globale personalizzato
-st.markdown("""
+# ==============================================================================
+# CONFIGURAZIONE TEMA GRAFICO (DARK / LIGHT THEME TOGGLE)
+# ==============================================================================
+st.sidebar.markdown("### 🎨 Impostazioni Grafiche")
+theme_choice = st.sidebar.radio(
+    "Seleziona Tema Display:",
+    ["🌙 Scuro (Dark / Black Mode)", "☀️ Chiaro (Light Mode)"],
+    index=0,
+    help="Ottimizza il contrasto e la leggibilità di grafici, mappe cromosomiche e card cliniche."
+)
+is_dark = "Scuro" in theme_choice
+
+# Palette cromatica dinamica
+if is_dark:
+    theme = {
+        "card_bg": "#1e293b",
+        "card_border": "#334155",
+        "box_container_bg": "#0f172a",
+        "text_main": "#f8fafc",
+        "text_sub": "#cbd5e1",
+        "text_muted": "#94a3b8",
+        "gene_inactive_bg": "#1e293b",
+        "gene_inactive_txt": "#64748b",
+        "gene_inactive_border": "#334155",
+        "hotspot_bg": "#1e293b",
+        "hotspot_border": "#475569",
+        "hotspot_txt": "#94a3b8",
+        "chart_axis": "#cbd5e1",
+        "chart_grid": "#334155",
+        "alt_theme": "dark"
+    }
+    alt.themes.enable('dark')
+else:
+    theme = {
+        "card_bg": "#ffffff",
+        "card_border": "#e2e8f0",
+        "box_container_bg": "#ffffff",
+        "text_main": "#1e293b",
+        "text_sub": "#475569",
+        "text_muted": "#64748b",
+        "gene_inactive_bg": "#f8fafc",
+        "gene_inactive_txt": "#94a3b8",
+        "gene_inactive_border": "#cbd5e1",
+        "hotspot_bg": "#f8fafc",
+        "hotspot_border": "#cbd5e1",
+        "hotspot_txt": "#64748b",
+        "chart_axis": "#475569",
+        "chart_grid": "#e2e8f0",
+        "alt_theme": "default"
+    }
+    alt.themes.enable('default')
+
+# Iniezione CSS dinamico coerente con il tema
+st.markdown(f"""
 <style>
-    .metric-card {
-        background: #ffffff;
-        border: 1px solid #e2e8f0;
+    .metric-card {{
+        background: {theme["card_bg"]} !important;
+        border: 1px solid {theme["card_border"]} !important;
+        color: {theme["text_main"]} !important;
         border-radius: 10px;
         padding: 14px 18px;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        box-shadow: 0 1px 3px rgba(0,0,0,0.2);
         margin-bottom: 12px;
-    }
-    .badge-pill {
-        display: inline-block;
-        font-size: 0.75rem;
+    }}
+    .metric-title {{
         font-weight: 700;
-        padding: 2px 8px;
-        border-radius: 12px;
-        margin-left: 6px;
-    }
+        font-size: 0.95rem;
+        color: {theme["text_main"]} !important;
+    }}
+    .metric-desc {{
+        font-size: 0.85rem;
+        color: {theme["text_sub"]} !important;
+        margin-top: 4px;
+    }}
 </style>
 """, unsafe_allow_html=True)
 
 st.title("🧬 KIRis PRO: Alloreactivity & Immunogenetics Toolkit")
-st.markdown("**Versione Conforme a Validazione Deterministica ISO 13485**, Release 0.3.")
+st.markdown("**Versione Conforme a Validazione Deterministica ISO 13485**, Release 0.4.")
 
-# ==============================================================================
-# PRESET CLINICI RAPIDI
-# ==============================================================================
-PRESET_DICT = {
-    "Personalizzato (Inserimento manuale)": None,
-    "⭐ Candidato Ottimale: Donatore C1/C1 KIR2DS1+ vs Ricevente C2+ (Missing C2 + Attivazione KIR2DS1)": {
-        "rec_a": "A*02:01,A*03:01", "rec_b": "B*07:02,B*08:01", "rec_c": "C*02:02,C*04:01",
-        "don_a": "A*03:01,A*11:01", "don_b": "B*44:02,B*57:01", "don_c": "C*07:01,C*08:01",
-        "kir": {'KIR3DL3', 'KIR2DS2', 'KIR2DL2', 'KIR2DL3', 'KIR2DP1', 'KIR2DL1', 'KIR3DP1', 'KIR2DL4', 'KIR3DL1', 'KIR2DS1', 'KIR2DS4', 'KIR3DL2'},
-        "kir_null": False
-    },
-    "🛡️ Trapianto Standard: Aplotipo A/A (Missing-Self Assente, Graft Protetto)": {
-        "rec_a": "A*01:01,A*02:01", "rec_b": "B*07:02,B*44:02", "rec_c": "C*07:01,C*05:01",
-        "don_a": "A*01:01,A*03:01", "don_b": "B*07:02,B*44:02", "don_c": "C*07:01,C*05:01",
-        "kir": {'KIR3DL3', 'KIR2DL3', 'KIR2DP1', 'KIR2DL1', 'KIR3DP1', 'KIR2DL4', 'KIR3DL1', 'KIR2DS4', 'KIR3DL2'},
-        "kir_null": False
-    },
-    "🔥 High-Affinity Bw4-I80 Missing-Self (Ricevente Bw6/Bw6)": {
-        "rec_a": "A*02:01,A*03:01", "rec_b": "B*07:02,B*08:01", "rec_c": "C*07:01,C*03:01",
-        "don_a": "A*02:01,A*24:02", "don_b": "B*51:01,B*08:01", "don_c": "C*07:01,C*03:01",
-        "kir": {'KIR3DL3', 'KIR2DL3', 'KIR2DP1', 'KIR2DL1', 'KIR3DP1', 'KIR2DL4', 'KIR3DL1', 'KIR2DS4', 'KIR3DL2'},
-        "kir_null": False
-    },
-    "⚠️ Rischio Rigetto Innesto (HvG Alto): Donatore C1/C1 vs Ricevente C2/C2 Bw4": {
-        "rec_a": "A*24:02,A*02:01", "rec_b": "B*57:01,B*44:02", "rec_c": "C*02:02,C*04:01",
-        "don_a": "A*03:01,A*11:01", "don_b": "B*07:02,B*08:01", "don_c": "C*07:01,C*08:01",
-        "kir": {'KIR3DL3', 'KIR2DL3', 'KIR2DP1', 'KIR2DL1', 'KIR3DP1', 'KIR2DL4', 'KIR3DL1', 'KIR2DS4', 'KIR3DL2'},
-        "kir_null": False
-    }
-}
-
+# Definizione aplotipi di riferimento
 APLOTIPO_A_GENES = {'KIR3DL3', 'KIR2DL3', 'KIR2DP1', 'KIR2DL1', 'KIR3DP1', 'KIR2DL4', 'KIR3DL1', 'KIR2DS4', 'KIR3DL2'}
 APLOTIPO_B_FULL = {'KIR3DL3', 'KIR2DS2', 'KIR2DL2', 'KIR2DL3', 'KIR2DP1', 'KIR2DL1', 'KIR3DP1', 'KIR2DL4', 'KIR3DL1', 'KIR3DS1', 'KIR2DL5A', 'KIR2DL5B', 'KIR2DS5', 'KIR2DS1', 'KIR3DL2'}
 
@@ -85,92 +110,72 @@ tab1, tab2 = st.tabs([
 # --- TAB 1: ANALISI COMPLETA SINGOLA COPPIA RICEVENTE / DONATORE ---
 # ==============================================================================
 with tab1:
-    # Selettore Preset Rapido
-    selected_preset_name = st.selectbox(
-        "⚡ Caricamento Rapido Preset Clinico (Quick Load):",
-        list(PRESET_DICT.keys()),
-        index=0,
-        help="Seleziona un caso clinico tipo per precompilare istantaneamente tutti i dati."
-    )
-
-    preset_data = PRESET_DICT[selected_preset_name]
-
     col_rec, col_don = st.columns(2)
     with col_rec:
         st.subheader("1. Ricevente (HLA Data)")
-        val_ra = preset_data["rec_a"] if preset_data else "A*03:01,A*11:01"
-        val_rb = preset_data["rec_b"] if preset_data else "B*08:01,B*44:02"
-        val_rc = preset_data["rec_c"] if preset_data else "C*07:01,C*05:01"
-
-        rec_a = st.text_input("Rec HLA-A", val_ra, key="input_rec_a", help="Separa gli alleli con virgola (es. A*03:01, A*11:01)")
-        rec_b = st.text_input("Rec HLA-B", val_rb, key="input_rec_b")
-        rec_c = st.text_input("Rec HLA-C", val_rc, key="input_rec_c")
+        rec_a = st.text_input("Rec HLA-A", "A*03:01,A*11:01", help="Separa gli alleli con virgola (es. A*03:01, A*11:01)")
+        rec_b = st.text_input("Rec HLA-B", "B*08:01,B*44:02")
+        rec_c = st.text_input("Rec HLA-C", "C*07:01,C*05:01")
 
     with col_don:
         st.subheader("2. Donatore (HLA Data)")
-        val_da = preset_data["don_a"] if preset_data else "A*02:01,A*03:01"
-        val_db = preset_data["don_b"] if preset_data else "B*44:02,B*07:02"
-        val_dc = preset_data["don_c"] if preset_data else "C*03:01,C*08:01"
-
-        don_a = st.text_input("Don HLA-A", val_da, key="input_don_a")
-        don_b = st.text_input("Don HLA-B", val_db, key="input_don_b")
-        don_c = st.text_input("Don HLA-C", val_dc, key="input_don_c")
+        don_a = st.text_input("Don HLA-A", "A*02:01,A*03:01")
+        don_b = st.text_input("Don HLA-B", "B*44:02,B*07:02")
+        don_c = st.text_input("Don HLA-C", "C*03:01,C*08:01")
 
     st.markdown("---")
     st.subheader("3. Assetto Genico KIR Donatore (16 Loci) & Controllo Qualità")
 
+    # Inizializzazione session_state per i checkbox KIR
+    ALL_KIR_GENES = CEN_GENES + TEL_GENES
+    for g in ALL_KIR_GENES:
+        if f"cb_kir_{g}" not in st.session_state:
+            st.session_state[f"cb_kir_{g}"] = (g in APLOTIPO_A_GENES)
+
+    def apply_kir_profile(target_genes):
+        for gene in ALL_KIR_GENES:
+            st.session_state[f"cb_kir_{gene}"] = (gene in target_genes)
+
     # Pulsanti di selezione rapida aplotipo KIR
-    st.markdown("**Scorciatoie Assetto KIR Donatore:**")
+    st.markdown("**Impostazione Rapida Profilo KIR Donatore:**")
     btn_c1, btn_c2, btn_c3, btn_c4 = st.columns(4)
-
-    if "custom_kir_selection" not in st.session_state:
-        st.session_state.custom_kir_selection = set(preset_data["kir"]) if preset_data else set(APLOTIPO_A_GENES)
-
-    if preset_data and st.session_state.get("last_preset") != selected_preset_name:
-        st.session_state.custom_kir_selection = set(preset_data["kir"])
-        st.session_state.last_preset = selected_preset_name
 
     with btn_c1:
         if st.button("🔵 Aplotipo A Standard (9 Geni)", use_container_width=True):
-            st.session_state.custom_kir_selection = set(APLOTIPO_A_GENES)
+            apply_kir_profile(APLOTIPO_A_GENES)
             st.rerun()
     with btn_c2:
         if st.button("🟢 Aplotipo B Arricchito", use_container_width=True):
-            st.session_state.custom_kir_selection = set(APLOTIPO_B_FULL)
+            apply_kir_profile(APLOTIPO_B_FULL)
             st.rerun()
     with btn_c3:
         if st.button("🧬 Seleziona Tutti i Loci", use_container_width=True):
-            st.session_state.custom_kir_selection = set(CEN_GENES + TEL_GENES)
+            apply_kir_profile(set(ALL_KIR_GENES))
             st.rerun()
     with btn_c4:
-        if st.button("⚪ Solo Geni Costitutivi (Framework)", use_container_width=True):
-            st.session_state.custom_kir_selection = set(FRAMEWORK_GENES)
+        if st.button("⚪ Solo Costitutivi (Framework)", use_container_width=True):
+            apply_kir_profile(FRAMEWORK_GENES)
             st.rerun()
 
-    current_selected = st.session_state.custom_kir_selection
-
+    # Visualizzazione Checkbox collegate direttamente a session_state
     col_cen, col_tel = st.columns(2)
     with col_cen:
         st.markdown("**Regione Centromerica (CEN):**")
-        selected_cen = []
         for g in CEN_GENES:
-            is_checked = st.checkbox(g, value=(g in current_selected), key=f"cb_cen_{g}")
-            if is_checked: selected_cen.append(g)
+            st.checkbox(g, key=f"cb_kir_{g}")
 
     with col_tel:
         st.markdown("**Regione Telomerica (TEL):**")
-        selected_tel = []
         for g in TEL_GENES:
-            is_checked = st.checkbox(g, value=(g in current_selected), key=f"cb_tel_{g}")
-            if is_checked: selected_tel.append(g)
+            st.checkbox(g, key=f"cb_kir_{g}")
 
-    selected_kir = set(selected_cen + selected_tel)
-    
+    # Recupero geni effettivamente selezionati
+    selected_kir = {g for g in ALL_KIR_GENES if st.session_state.get(f"cb_kir_{g}", False)}
+
     # Variante Null KIR3DL1
-    val_null = preset_data["kir_null"] if preset_data else False
     kir3dl1_null = st.checkbox(
         "KIR3DL1: Variante Null / ER-trapped (*004)", 
-        value=val_null, 
+        value=False, 
         help="Se attivo, esclude KIR3DL1 dal licensing di superficie (segnale Null)."
     )
 
@@ -180,7 +185,8 @@ with tab1:
                 rec_a, rec_b, rec_c,
                 don_a, don_b, don_c,
                 selected_kir,
-                kir3dl1_null_variant=kir3dl1_null
+                kir3dl1_null_variant=kir3dl1_null,
+                is_dark=is_dark
             )
         except ValueError as err:
             st.error(f"⚠️ {str(err)}")
@@ -222,7 +228,7 @@ with tab1:
             f'<span style="background:{recom["color"]}; color:white; font-weight:bold; font-size:0.8rem; padding:4px 10px; border-radius:20px;">'
             f'{recom["level"]}</span>'
             f'</div>'
-            f'<p style="margin:0; color:#1e293b; font-size:0.95rem; line-height:1.5;">{recom["recommendation"]}</p>'
+            f'<p style="margin:0; color:{recom["badge_txt"]}; font-size:0.95rem; line-height:1.5;">{recom["recommendation"]}</p>'
             f'</div>',
             unsafe_allow_html=True
         )
@@ -230,7 +236,6 @@ with tab1:
         # ======================================================================
         # 2. MAPPA CROMOSOMICA INTERATTIVA A COLORI FUNZIONALI
         # ======================================================================
-        # Classificazione funzionale: INIBITORI, ATTIVATORI, FRAMEWORK, PSEUDOGENI
         gene_annotations = {
             "KIR3DL3": ("3DL3", "FW", "#7c3aed", "Framework Costitutivo"),
             "KIR2DS2": ("2DS2", "Act", "#059669", "Attivatorio"),
@@ -259,14 +264,14 @@ with tab1:
             for gk in gene_keys:
                 short, badge, color_func, _ = gene_annotations[gk]
                 is_present = gk in selected_kir
-                bg_color = color_func if is_present else "#f1f5f9"
-                txt_color = "#ffffff" if is_present else "#94a3b8"
-                border_st = f"2px solid {color_func}" if is_present else "1px dashed #cbd5e1"
-                badge_html = f"<span style='font-size:0.6rem; background:rgba(0,0,0,0.25); color:white; padding:1px 3px; border-radius:3px; margin-left:2px;'>{badge}</span>" if badge else ""
+                bg_color = color_func if is_present else theme["gene_inactive_bg"]
+                txt_color = "#ffffff" if is_present else theme["gene_inactive_txt"]
+                border_st = f"2px solid {color_func}" if is_present else f"1px dashed {theme['gene_inactive_border']}"
+                badge_html = f"<span style='font-size:0.6rem; background:rgba(0,0,0,0.3); color:white; padding:1px 3px; border-radius:3px; margin-left:2px;'>{badge}</span>" if badge else ""
                 boxes.append(
                     f'<div style="flex:1; min-width:48px; background:{bg_color}; color:{txt_color}; '
                     f'border:{border_st}; border-radius:6px; padding:7px 2px; text-align:center; '
-                    f'font-weight:bold; font-size:0.75rem; box-shadow:0 1px 2px rgba(0,0,0,0.06);">'
+                    f'font-weight:bold; font-size:0.75rem; box-shadow:0 1px 2px rgba(0,0,0,0.15);">'
                     f'{short}{badge_html}</div>'
                 )
             return "".join(boxes)
@@ -275,17 +280,17 @@ with tab1:
         tel_boxes_str = render_boxes(tel_order)
 
         st.markdown(
-            f'<div style="background-color:#ffffff; border:1px solid #e2e8f0; border-radius:12px; padding:18px; margin-bottom:25px; box-shadow:0 2px 4px rgba(0,0,0,0.02);">'
+            f'<div style="background-color:{theme["box_container_bg"]}; border:1px solid {theme["card_border"]}; border-radius:12px; padding:18px; margin-bottom:25px;">'
             f'<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">'
-            f'<span style="font-weight:bold; font-size:0.95rem; color:#1e293b;">🧬 MAPPA CROMOSOMICA COMPARATIVA DEL LOCUS KIR</span>'
-            f'<span style="font-size:0.8rem; color:#64748b;">5\' CENTROMERO ➡️ TELOMERO 3\'</span>'
+            f'<span style="font-weight:bold; font-size:0.95rem; color:{theme["text_main"]};">🧬 MAPPA CROMOSOMICA COMPARATIVA DEL LOCUS KIR</span>'
+            f'<span style="font-size:0.8rem; color:{theme["text_muted"]};">5\' CENTROMERO ➡️ TELOMERO 3\'</span>'
             f'</div>'
             f'<div style="display:flex; gap:6px; align-items:center; overflow-x:auto; padding-bottom:6px;">'
             f'{cen_boxes_str}'
-            f'<div style="background:#f8fafc; border:2px solid #cbd5e1; border-radius:4px; padding:6px 4px; writing-mode:vertical-rl; text-orientation:mixed; font-size:0.6rem; font-weight:bold; color:#64748b; text-align:center;">HOTSPOT</div>'
+            f'<div style="background:{theme["hotspot_bg"]}; border:2px solid {theme["hotspot_border"]}; border-radius:4px; padding:6px 4px; writing-mode:vertical-rl; text-orientation:mixed; font-size:0.6rem; font-weight:bold; color:{theme["hotspot_txt"]}; text-align:center;">HOTSPOT</div>'
             f'{tel_boxes_str}'
             f'</div>'
-            f'<div style="display:flex; gap:16px; margin-top:10px; font-size:0.75rem; color:#475569; justify-content:center;">'
+            f'<div style="display:flex; gap:16px; margin-top:10px; font-size:0.75rem; color:{theme["text_sub"]}; justify-content:center;">'
             f'<span><span style="display:inline-block; width:10px; height:10px; background:#2563eb; border-radius:2px; margin-right:4px;"></span>Inibitori</span>'
             f'<span><span style="display:inline-block; width:10px; height:10px; background:#059669; border-radius:2px; margin-right:4px;"></span>Attivatori</span>'
             f'<span><span style="display:inline-block; width:10px; height:10px; background:#7c3aed; border-radius:2px; margin-right:4px;"></span>Framework</span>'
@@ -302,7 +307,7 @@ with tab1:
         r_ligs_str = ", ".join(sorted(r_ligs))
         
         st.markdown(
-            f'<div style="background:linear-gradient(135deg, #1e293b 0%, #0f172a 100%); color:white; border-radius:12px; padding:20px; margin-bottom:25px;">'
+            f'<div style="background:linear-gradient(135deg, #1e293b 0%, #0f172a 100%); color:white; border:1px solid #334155; border-radius:12px; padding:20px; margin-bottom:25px;">'
             f'<h3 style="margin-top:0; color:#38bdf8; font-size:1.15rem;">📊 KIRis: Profilo Immunogenetico della Coppia</h3>'
             f'<div style="display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-top:15px;">'
             f'<div style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:8px; padding:15px;">'
@@ -327,7 +332,7 @@ with tab1:
         st.dataframe(pd.DataFrame(edu_res), use_container_width=True)
 
         # ======================================================================
-        # 5. RADAR CHART SVG & CARD VETTORI CLINICI
+        # 5. RADAR CHART SVG & CARD VETTORI CLINICI (OTTIMIZZATI PER IL TEMA)
         # ======================================================================
         st.markdown("#### 🎯 Valutazione Geometrica dei Vettori Clinici (1-5)")
         col_radar, col_cards = st.columns([5, 7])
@@ -338,12 +343,12 @@ with tab1:
         with col_cards:
             # Card GvH
             st.markdown(
-                f'<div class="metric-card" style="border-left:5px solid {gvh_c};">'
+                f'<div class="metric-card" style="border-left:5px solid {gvh_c} !important;">'
                 f'<div style="display:flex; justify-content:space-between;">'
-                f'<b>⚡ Vettore GvH (Alloreattività Donatore ➡️ Ospite)</b>'
+                f'<span class="metric-title">⚡ Vettore GvH (Alloreattività Donatore ➡️ Ospite)</span>'
                 f'<span style="font-weight:bold; color:{gvh_c};">Score {gvh_sc}/5</span>'
                 f'</div>'
-                f'<div style="font-size:0.85rem; color:#475569; margin-top:4px;">{gvh_s}</div>'
+                f'<div class="metric-desc">{gvh_s}</div>'
                 f'</div>',
                 unsafe_allow_html=True
             )
@@ -351,12 +356,12 @@ with tab1:
 
             # Card HvG
             st.markdown(
-                f'<div class="metric-card" style="border-left:5px solid {hvg_c}; margin-top:12px;">'
+                f'<div class="metric-card" style="border-left:5px solid {hvg_c} !important; margin-top:12px;">'
                 f'<div style="display:flex; justify-content:space-between;">'
-                f'<b>🛡️ Vettore HvG (Rischio Rigetto Graft da NK Ospite)</b>'
+                f'<span class="metric-title">🛡️ Vettore HvG (Rischio Rigetto Graft da NK Ospite)</span>'
                 f'<span style="font-weight:bold; color:{hvg_c};">Score {hvg_sc}/5</span>'
                 f'</div>'
-                f'<div style="font-size:0.85rem; color:#475569; margin-top:4px;">{hvg_s}</div>'
+                f'<div class="metric-desc">{hvg_s}</div>'
                 f'</div>',
                 unsafe_allow_html=True
             )
@@ -364,12 +369,12 @@ with tab1:
 
             # Card GvL
             st.markdown(
-                f'<div class="metric-card" style="border-left:5px solid {gvl_c}; margin-top:12px;">'
+                f'<div class="metric-card" style="border-left:5px solid {gvl_c} !important; margin-top:12px;">'
                 f'<div style="display:flex; justify-content:space-between;">'
-                f'<b>🎯 Vettore GvL (Efficacia Anti-Leucemica / Anti-Recidiva)</b>'
+                f'<span class="metric-title">🎯 Vettore GvL (Efficacia Anti-Leucemica / Anti-Recidiva)</span>'
                 f'<span style="font-weight:bold; color:{gvl_c};">Score {gvl_sc}/5</span>'
                 f'</div>'
-                f'<div style="font-size:0.85rem; color:#475569; margin-top:4px;">{gvl_s}</div>'
+                f'<div class="metric-desc">{gvl_s}</div>'
                 f'</div>',
                 unsafe_allow_html=True
             )
@@ -428,7 +433,6 @@ with tab2:
         "Il motore eseguirà in modalità deterministica l'analisi immunogenetica per ciascun caso secondo i criteri ISO 13485."
     )
 
-    # Template CSV scaricabile
     sample_template = (
         "ID,Rec_HLA_A,Rec_HLA_B,Rec_HLA_C,Don_HLA_A,Don_HLA_B,Don_HLA_C,Don_KIR,KIR3DL1_Null\n"
         "PAZ-001,A*03:01;A*11:01,B*08:01;B*44:02,C*07:01;C*05:01,A*02:01;A*03:01,B*44:02;B*07:02,C*03:01;C*08:01,\"KIR3DL3,KIR2DS2,KIR2DL2,KIR2DL3,KIR2DP1,KIR2DL1,KIR3DP1,KIR2DL4,KIR3DL1,KIR2DS1,KIR2DS4,KIR3DL2\",False\n"
@@ -446,7 +450,7 @@ with tab2:
             mime="text/csv"
         )
     with col_info_tpl:
-        st.caption("Il template include 4 casi studio clinici pronti: aplotipi A/A e B/X, varianti C1/C2, Bw4 e status KIR2DS1.")
+        st.caption("Il template include esempi clinici preimpostati con aplotipi A/A e B/X, varianti C1/C2, Bw4 e status KIR2DS1.")
 
     f = st.file_uploader("Carica file dataset (.csv / .xlsx)", type=["csv", "xlsx"])
 
@@ -576,7 +580,8 @@ with tab2:
                             r_a_raw, r_b_raw, r_c_raw,
                             d_a_raw, d_b_raw, d_c_raw,
                             don_kir_set,
-                            kir3dl1_null_variant=kir_null_val
+                            kir3dl1_null_variant=kir_null_val,
+                            is_dark=is_dark
                         )
 
                         results_batch.append({
@@ -650,7 +655,7 @@ with tab2:
                     st.warning(f"⚠️ {n_err} casi hanno riscontrato errori di sintassi allelica. Consulta la colonna 'Note_Errore'.")
 
                 # ==============================================================
-                # GRAFICI INTERATTIVI DI COORTE ALTAIR
+                # GRAFICI INTERATTIVI DI COORTE ALTAIR (CALIBRATI SUL TEMA)
                 # ==============================================================
                 if n_valid > 0:
                     st.markdown("### 📊 Visualizzazioni Interattive di Coorte")
@@ -663,8 +668,8 @@ with tab2:
                         hist_data['Score_GvL'] = hist_data['Score_GvL'].astype(str)
 
                         bar_chart = alt.Chart(hist_data).mark_bar(cornerRadiusTopLeft=4, cornerRadiusTopRight=4).encode(
-                            x=alt.X('Score_GvL:O', title='Score GvL (1-5)'),
-                            y=alt.Y('Numero_Casi:Q', title='Numero di Pazienti'),
+                            x=alt.X('Score_GvL:O', title='Score GvL (1-5)', axis=alt.Axis(labelColor=theme['chart_axis'], titleColor=theme['text_main'])),
+                            y=alt.Y('Numero_Casi:Q', title='Numero di Pazienti', axis=alt.Axis(labelColor=theme['chart_axis'], titleColor=theme['text_main'], gridColor=theme['chart_grid'])),
                             color=alt.Color('Score_GvL:N', scale=alt.Scale(
                                 domain=['1', '2', '3', '4', '5'],
                                 range=['#94a3b8', '#60a5fa', '#3b82f6', '#10b981', '#059669']
@@ -675,13 +680,13 @@ with tab2:
 
                     with chart_col2:
                         st.markdown("**Matrice Decisionale: Potenziale GvL vs Rischio Rigetto HvG**")
-                        scatter_chart = alt.Chart(df_valid).mark_circle(size=120, opacity=0.8).encode(
-                            x=alt.X('HvG_Score:Q', title='Rischio Rigetto HvG (1 = Minimo, 5 = Massimo)', scale=alt.Scale(domain=[0.5, 5.5])),
-                            y=alt.Y('GvL_Score:Q', title='Potenziale Anti-Leucemico GvL (1-5)', scale=alt.Scale(domain=[0.5, 5.5])),
+                        scatter_chart = alt.Chart(df_valid).mark_circle(size=130, opacity=0.85).encode(
+                            x=alt.X('HvG_Score:Q', title='Rischio Rigetto HvG (1 = Minimo, 5 = Massimo)', scale=alt.Scale(domain=[0.5, 5.5]), axis=alt.Axis(labelColor=theme['chart_axis'], titleColor=theme['text_main'], gridColor=theme['chart_grid'])),
+                            y=alt.Y('GvL_Score:Q', title='Potenziale Anti-Leucemico GvL (1-5)', scale=alt.Scale(domain=[0.5, 5.5]), axis=alt.Axis(labelColor=theme['chart_axis'], titleColor=theme['text_main'], gridColor=theme['chart_grid'])),
                             color=alt.Color('Idoneità_Donatore:N', scale=alt.Scale(
                                 domain=['PRIORITÀ ELEVATA', 'FAVOREVOLE', 'STANDARD', 'SUBOTTIMALE'],
                                 range=['#10b981', '#3b82f6', '#f59e0b', '#ef4444']
-                            )),
+                            ), legend=alt.Legend(title="Idoneità Donatore", labelColor=theme['chart_axis'], titleColor=theme['text_main'])),
                             tooltip=['ID', 'Idoneità_Donatore', 'GvL_Score', 'HvG_Score', 'Aplotipo_KIR']
                         ).properties(height=260)
                         st.altair_chart(scatter_chart, use_container_width=True)

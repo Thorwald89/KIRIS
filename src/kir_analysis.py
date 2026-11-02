@@ -462,17 +462,17 @@ def calculate_vectors_quantitative(edu_results, don_ligs, rec_ligs, haplo, b_sco
 
     return gvh_score, gvh_status, gvh_color, hvg_score, hvg_status, hvg_color, gvl_score, gvl_status, gvl_color
 
-def calculate_donor_recommendation(gvh_score, hvg_score, gvl_score, haplo, b_score):
+def calculate_donor_recommendation(gvh_score, hvg_score, gvl_score, haplo, b_score, is_dark=True):
     """
     Sintetizzatore decisionale clinico per selezione donatore (Criteri EBMT / GITMO).
-    Rilascia una classificazione a 4 livelli con raccomandazione esplicita.
+    Rilascia una classificazione a 4 livelli con raccomandazione esplicita e palette per dark/light mode.
     """
     if hvg_score >= 4:
         level = "SUBOTTIMALE"
         title = "⚠️ Donatore Subottimale (Rischio Rigetto HvG Elevato)"
         color = "#ef4444"
-        badge_bg = "#fee2e2"
-        badge_txt = "#991b1b"
+        badge_bg = "rgba(239, 68, 68, 0.15)" if is_dark else "#fee2e2"
+        badge_txt = "#fca5a5" if is_dark else "#991b1b"
         recom = (
             "Attenzione: elevata reattività delle cellule NK residue dell'ospite contro le cellule staminali "
             "del donatore (mismatch inibitorio inverso significativo). Rischio aumentato di mancato attecchimento "
@@ -482,8 +482,8 @@ def calculate_donor_recommendation(gvh_score, hvg_score, gvl_score, haplo, b_sco
         level = "PRIORITÀ ELEVATA"
         title = "⭐ Donatore Ottimale (Massimo Beneficio GvL & Innesto Protetto)"
         color = "#10b981"
-        badge_bg = "#d1fae5"
-        badge_txt = "#065f46"
+        badge_bg = "rgba(16, 185, 129, 0.15)" if is_dark else "#d1fae5"
+        badge_txt = "#6ee7b7" if is_dark else "#065f46"
         recom = (
             "Profilo immunogenetico ideale: forte potenziale citotossico alloreattivo contro la leucemia "
             "(elevato Missing-Self e/o stimolo attivatorio KIR2DS1 su target C2+) associato a un innesto "
@@ -493,8 +493,8 @@ def calculate_donor_recommendation(gvh_score, hvg_score, gvl_score, haplo, b_sco
         level = "FAVOREVOLE"
         title = "🟢 Donatore Favorevole (Buon Potenziale GvL)"
         color = "#3b82f6"
-        badge_bg = "#dbeafe"
-        badge_txt = "#1e40af"
+        badge_bg = "rgba(59, 130, 246, 0.15)" if is_dark else "#dbeafe"
+        badge_txt = "#93c5fd" if is_dark else "#1e40af"
         recom = (
             "Profilo clinico vantaggioso: presenza di fattori alloreattivi e/o aplotipo B favorevole, con "
             "rischio di reiezione contenuto. Donatore raccomandato per la procedura trapiantologica."
@@ -503,8 +503,8 @@ def calculate_donor_recommendation(gvh_score, hvg_score, gvl_score, haplo, b_sco
         level = "STANDARD"
         title = "🟡 Donatore Idoneo Standard (Effetto NK Neutro)"
         color = "#f59e0b"
-        badge_bg = "#fef3c7"
-        badge_txt = "#92400e"
+        badge_bg = "rgba(245, 158, 11, 0.15)" if is_dark else "#fef3c7"
+        badge_txt = "#fcd34d" if is_dark else "#92400e"
         recom = (
             "Profilo convenzionale neutro: assenza di specifici mismatch alloreattivi inibitori e innesto "
             "in equilibrio immunologico basale. Il trapianto seguirà il decorso standard dei protocolli clinici."
@@ -519,24 +519,32 @@ def calculate_donor_recommendation(gvh_score, hvg_score, gvl_score, haplo, b_sco
         "recommendation": recom
     }
 
-def generate_radar_chart_svg(gvh_score, hvg_score, gvl_score, width=320, height=270):
+def generate_radar_chart_svg(gvh_score, hvg_score, gvl_score, is_dark=True, width=320, height=270):
     """
     Genera un Radar Chart SVG puro e moderno a 3 assi (GvH, HvG, GvL) su scala 1-5.
+    Supporta Dark Mode (sfondo scuro ad alto contrasto) e Light Mode.
     Totalmente reattivo, privo di dipendenze esterne.
     """
     cx = width / 2.0
     cy = height / 2.0 + 8.0
     max_r = min(width, height) * 0.38
 
-    # 3 vertici:
-    # Asse 1 (GvH): Top (-90 gradi)
-    # Asse 2 (GvL): Bottom-Right (30 gradi)
-    # Asse 3 (HvG): Bottom-Left (150 gradi)
     angles_deg = [-90.0, 30.0, 150.0]
     angles_rad = [math.radians(a) for a in angles_deg]
 
     def polar_to_cartesian(angle_rad, radius):
         return cx + radius * math.cos(angle_rad), cy + radius * math.sin(angle_rad)
+
+    # Impostazioni colore in base al tema
+    bg_color = "#0f172a" if is_dark else "#ffffff"
+    border_color = "#334155" if is_dark else "#e2e8f0"
+    grid_color = "#334155" if is_dark else "#e2e8f0"
+    axis_color = "#475569" if is_dark else "#cbd5e1"
+    grid_txt_color = "#64748b" if is_dark else "#94a3b8"
+
+    txt_gvh = "#f8fafc" if is_dark else "#1e293b"
+    txt_gvl = "#34d399" if is_dark else "#059669"
+    txt_hvg = "#f87171" if is_dark else "#dc2626"
 
     # Griglia concentrica da 1 a 5
     grid_lines = []
@@ -545,20 +553,18 @@ def generate_radar_chart_svg(gvh_score, hvg_score, gvl_score, width=320, height=
         pts = [polar_to_cartesian(a, r) for a in angles_rad]
         pts_str = " ".join(f"{x:.1f},{y:.1f}" for x, y in pts)
         grid_lines.append(
-            f'<polygon points="{pts_str}" fill="none" stroke="#e2e8f0" stroke-width="1" stroke-dasharray="2,2"/>'
+            f'<polygon points="{pts_str}" fill="none" stroke="{grid_color}" stroke-width="1" stroke-dasharray="2,2"/>'
         )
-        # Etichetta livello su asse GvH
         lx, ly = polar_to_cartesian(angles_rad[0], r)
         grid_lines.append(
-            f'<text x="{lx + 6}" y="{ly + 3}" font-size="9" fill="#94a3b8" font-family="sans-serif">{step}</text>'
+            f'<text x="{lx + 6}" y="{ly + 3}" font-size="9" fill="{grid_txt_color}" font-family="sans-serif">{step}</text>'
         )
 
-    # Linee assi dal centro
     axis_lines = []
     for a in angles_rad:
         x, y = polar_to_cartesian(a, max_r)
         axis_lines.append(
-            f'<line x1="{cx}" y1="{cy}" x2="{x}" y2="{y}" stroke="#cbd5e1" stroke-width="1.2"/>'
+            f'<line x1="{cx}" y1="{cy}" x2="{x}" y2="{y}" stroke="{axis_color}" stroke-width="1.2"/>'
         )
 
     # Poligono dati paziente/donatore
@@ -570,30 +576,29 @@ def generate_radar_chart_svg(gvh_score, hvg_score, gvl_score, width=320, height=
 
     data_pts_str = " ".join(f"{x:.1f},{y:.1f}" for x, y in data_pts)
 
-    # Determinazione colore dominante
     if gvl_score >= 4 and hvg_score <= 2:
-        poly_fill = "rgba(16, 185, 129, 0.35)"
-        poly_stroke = "#059669"
+        poly_fill = "rgba(16, 185, 129, 0.45)" if is_dark else "rgba(16, 185, 129, 0.35)"
+        poly_stroke = "#34d399" if is_dark else "#059669"
     elif hvg_score >= 4:
-        poly_fill = "rgba(239, 68, 68, 0.35)"
-        poly_stroke = "#dc2626"
+        poly_fill = "rgba(239, 68, 68, 0.45)" if is_dark else "rgba(239, 68, 68, 0.35)"
+        poly_stroke = "#f87171" if is_dark else "#dc2626"
     else:
-        poly_fill = "rgba(59, 130, 246, 0.35)"
-        poly_stroke = "#2563eb"
+        poly_fill = "rgba(59, 130, 246, 0.45)" if is_dark else "rgba(59, 130, 246, 0.35)"
+        poly_stroke = "#60a5fa" if is_dark else "#2563eb"
 
     data_dots = []
+    dot_stroke = "#0f172a" if is_dark else "#ffffff"
     for x, y in data_pts:
         data_dots.append(
-            f'<circle cx="{x:.1f}" cy="{y:.1f}" r="4.5" fill="{poly_stroke}" stroke="#ffffff" stroke-width="1.5"/>'
+            f'<circle cx="{x:.1f}" cy="{y:.1f}" r="4.5" fill="{poly_stroke}" stroke="{dot_stroke}" stroke-width="1.5"/>'
         )
 
-    # Etichette dei vertici
     lbl_gvh_x, lbl_gvh_y = polar_to_cartesian(angles_rad[0], max_r + 18)
     lbl_gvl_x, lbl_gvl_y = polar_to_cartesian(angles_rad[1], max_r + 22)
     lbl_hvg_x, lbl_hvg_y = polar_to_cartesian(angles_rad[2], max_r + 22)
 
     svg = f"""
-    <svg width="100%" height="{height}" viewBox="0 0 {width} {height}" xmlns="http://www.w3.org/2000/svg" style="background:#ffffff; border-radius:12px; border:1px solid #e2e8f0;">
+    <svg width="100%" height="{height}" viewBox="0 0 {width} {height}" xmlns="http://www.w3.org/2000/svg" style="background:{bg_color}; border-radius:12px; border:1px solid {border_color};">
         <!-- Griglia -->
         {''.join(grid_lines)}
         {''.join(axis_lines)}
@@ -603,9 +608,9 @@ def generate_radar_chart_svg(gvh_score, hvg_score, gvl_score, width=320, height=
         {''.join(data_dots)}
 
         <!-- Etichette Asse -->
-        <text x="{lbl_gvh_x}" y="{lbl_gvh_y}" text-anchor="middle" font-size="11" font-weight="bold" fill="#1e293b" font-family="sans-serif">⚡ GvH ({gvh_score}/5)</text>
-        <text x="{lbl_gvl_x}" y="{lbl_gvl_y}" text-anchor="middle" font-size="11" font-weight="bold" fill="#059669" font-family="sans-serif">🎯 GvL ({gvl_score}/5)</text>
-        <text x="{lbl_hvg_x}" y="{lbl_hvg_y}" text-anchor="middle" font-size="11" font-weight="bold" fill="#dc2626" font-family="sans-serif">🛡️ HvG ({hvg_score}/5)</text>
+        <text x="{lbl_gvh_x}" y="{lbl_gvh_y}" text-anchor="middle" font-size="11" font-weight="bold" fill="{txt_gvh}" font-family="sans-serif">⚡ GvH ({gvh_score}/5)</text>
+        <text x="{lbl_gvl_x}" y="{lbl_gvl_y}" text-anchor="middle" font-size="11" font-weight="bold" fill="{txt_gvl}" font-family="sans-serif">🎯 GvL ({gvl_score}/5)</text>
+        <text x="{lbl_hvg_x}" y="{lbl_hvg_y}" text-anchor="middle" font-size="11" font-weight="bold" fill="{txt_hvg}" font-family="sans-serif">🛡️ HvG ({hvg_score}/5)</text>
     </svg>
     """
     return svg
@@ -626,7 +631,7 @@ def format_excel_row(edu_results, haplo, b_score, gvh_sc, hvg_sc, gvl_sc):
         f"{get_excel_label('KIR3DL2')}\t{gvh_sc}\t{hvg_sc}\t{gvl_sc}"
     )
 
-def analyze_single_pair(rec_a, rec_b, rec_c, don_a, don_b, don_c, don_kir_set, kir3dl1_null_variant=False):
+def analyze_single_pair(rec_a, rec_b, rec_c, don_a, don_b, don_c, don_kir_set, kir3dl1_null_variant=False, is_dark=True):
     """
     Funzione ad alta affidabilità per analizzare una coppia Ricevente-Donatore.
     Utilizzata sia dalla GUI interattiva che dal motore batch di coorte.
@@ -651,8 +656,8 @@ def analyze_single_pair(rec_a, rec_b, rec_c, don_a, don_b, don_c, don_kir_set, k
         edu_res, d_ligs, r_ligs, haplo, b_score, k2ds1_edu_status
     )
 
-    recom = calculate_donor_recommendation(gvh_sc, hvg_sc, gvl_sc, haplo, b_score)
-    radar_svg = generate_radar_chart_svg(gvh_sc, hvg_sc, gvl_sc)
+    recom = calculate_donor_recommendation(gvh_sc, hvg_sc, gvl_sc, haplo, b_score, is_dark=is_dark)
+    radar_svg = generate_radar_chart_svg(gvh_sc, hvg_sc, gvl_sc, is_dark=is_dark)
     excel_str = format_excel_row(edu_res, haplo, b_score, gvh_sc, hvg_sc, gvl_sc)
 
     return {
