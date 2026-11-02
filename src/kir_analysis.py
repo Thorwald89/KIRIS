@@ -4,6 +4,7 @@ Module: kir_analysis.py
 Compliance: ISO 13485 (Deterministic calculations, no stochastic/probabilistic models)
 """
 
+import math
 import re
 import pandas as pd
 
@@ -292,18 +293,15 @@ def calculate_vectors_quantitative(edu_results, don_ligs, rec_ligs, haplo, b_sco
     - HvG (Rischio Rigetto Graft da parte delle cellule NK dell'ospite)
     - GvL (Effetto Anti-Leucemico guidato da missing ligand, KIR2DS1 attivo su ricevente C2+, e B-score)
     """
-    # Determinazione disponibilità ligandi funzionali nel ricevente
     rec_has_c1 = 'C1' in rec_ligs
     rec_has_c2 = 'C2' in rec_ligs
     rec_has_bw4 = ('Bw4-I80' in rec_ligs) or ('Bw4-T80' in rec_ligs)
     rec_has_a3_a11 = 'A3/A11' in rec_ligs
 
-    # Determinazione ligandi nel donatore
     don_has_c1 = 'C1' in don_ligs
     don_has_c2 = 'C2' in don_ligs
     don_has_bw4 = ('Bw4-I80' in don_ligs) or ('Bw4-T80' in don_ligs)
 
-    # Dizionario rapido delle righe educative
     edu_map = {r['KIR']: r for r in edu_results}
 
     # ----------------------------------------------------
@@ -312,7 +310,6 @@ def calculate_vectors_quantitative(edu_results, don_ligs, rec_ligs, haplo, b_sco
     gvh_tags = []
     gvh_weight = 0.0
 
-    # Valutazione KIR3DL1
     r_3dl1 = edu_map.get('KIR3DL1')
     if r_3dl1 and "Educato" in r_3dl1['Edu']:
         if not rec_has_bw4:
@@ -323,14 +320,12 @@ def calculate_vectors_quantitative(edu_results, don_ligs, rec_ligs, haplo, b_sco
                 gvh_weight += 1.2
                 gvh_tags.append("KIR3DL1(Bw4-T80) ML")
 
-    # Valutazione KIR2DL1
     r_2dl1 = edu_map.get('KIR2DL1')
     if r_2dl1 and "Educato" in r_2dl1['Edu']:
         if not rec_has_c2:
             gvh_weight += 2.0
             gvh_tags.append("KIR2DL1(C2) ML")
 
-    # Valutazione KIR2DL2 / KIR2DL3 per Locus C1 (evitiamo doppio conteggio per lo stesso epitopo mancante C1)
     r_2dl2 = edu_map.get('KIR2DL2')
     r_2dl3 = edu_map.get('KIR2DL3')
     c1_missing_in_rec = not rec_has_c1
@@ -343,13 +338,11 @@ def calculate_vectors_quantitative(edu_results, don_ligs, rec_ligs, haplo, b_sco
             gvh_weight += 0.8
             gvh_tags.append("KIR2DL3(C1) ML")
 
-    # Valutazione KIR3DL2 ausiliario
     r_3dl2 = edu_map.get('KIR3DL2')
     if r_3dl2 and "Presenza di ligando" in r_3dl2['Edu'] and not rec_has_a3_a11:
         gvh_weight += 0.4
         gvh_tags.append("KIR3DL2(A3/A11) ML")
 
-    # Contributo attivatorio KIR2DS1: richiede che il Ricevente abbia il ligando bersaglio C2!
     if rec_has_c2:
         if "Hyperexcitable" in k2ds1_edu:
             gvh_weight += 1.0
@@ -358,7 +351,6 @@ def calculate_vectors_quantitative(edu_results, don_ligs, rec_ligs, haplo, b_sco
             gvh_weight += 0.5
             gvh_tags.append("KIR2DS1(Resp. vs C2)")
 
-    # Ponderazione dello Score GvH (1-5)
     if gvh_weight == 0.0:
         gvh_score = 1
         gvh_status = "Nullo / Tollerante (Nessun Mismatch)"
@@ -423,7 +415,6 @@ def calculate_vectors_quantitative(edu_results, don_ligs, rec_ligs, haplo, b_sco
     gvl_points = 1.0
     gvl_reasons = []
 
-    # A) Contributo Missing-Self inibitorio
     inhibitory_mismatches = [t for t in gvh_tags if "ML" in t]
     has_high_aff_ml = any(("C2" in t or "Bw4-I80" in t) for t in inhibitory_mismatches)
 
@@ -437,7 +428,6 @@ def calculate_vectors_quantitative(edu_results, don_ligs, rec_ligs, haplo, b_sco
         gvl_points += 1.0
         gvl_reasons.append("Missing-Self Media/Bassa Affinità (+1.0)")
 
-    # B) Contributo Attivatorio KIR2DS1 (richiede Ricevente C2+)
     if rec_has_c2:
         if "Hyperexcitable" in k2ds1_edu:
             gvl_points += 1.5
@@ -448,7 +438,6 @@ def calculate_vectors_quantitative(edu_results, don_ligs, rec_ligs, haplo, b_sco
     elif "Hyperexcitable" in k2ds1_edu or "Responsivo" in k2ds1_edu:
         gvl_reasons.append("KIR2DS1 non stimolato (Ricevente C2-negativo)")
 
-    # C) Contributo Aplotipo B (B-content / Cooley Model)
     if b_score >= 3:
         gvl_points += 1.5
         gvl_reasons.append("Aplotipo B Arricchito (B-Score >= 3) (+1.5)")
@@ -472,6 +461,154 @@ def calculate_vectors_quantitative(edu_results, don_ligs, rec_ligs, haplo, b_sco
     gvl_color = "#27ae60" if gvl_score >= 4 else "#2980b9" if gvl_score == 3 else "#7f8c8d"
 
     return gvh_score, gvh_status, gvh_color, hvg_score, hvg_status, hvg_color, gvl_score, gvl_status, gvl_color
+
+def calculate_donor_recommendation(gvh_score, hvg_score, gvl_score, haplo, b_score):
+    """
+    Sintetizzatore decisionale clinico per selezione donatore (Criteri EBMT / GITMO).
+    Rilascia una classificazione a 4 livelli con raccomandazione esplicita.
+    """
+    if hvg_score >= 4:
+        level = "SUBOTTIMALE"
+        title = "⚠️ Donatore Subottimale (Rischio Rigetto HvG Elevato)"
+        color = "#ef4444"
+        badge_bg = "#fee2e2"
+        badge_txt = "#991b1b"
+        recom = (
+            "Attenzione: elevata reattività delle cellule NK residue dell'ospite contro le cellule staminali "
+            "del donatore (mismatch inibitorio inverso significativo). Rischio aumentato di mancato attecchimento "
+            "(graft failure). Se selezionato, valutare intensificazione del condizionamento o immuno-profilassi rinforzata."
+        )
+    elif gvl_score >= 4 and hvg_score <= 2:
+        level = "PRIORITÀ ELEVATA"
+        title = "⭐ Donatore Ottimale (Massimo Beneficio GvL & Innesto Protetto)"
+        color = "#10b981"
+        badge_bg = "#d1fae5"
+        badge_txt = "#065f46"
+        recom = (
+            "Profilo immunogenetico ideale: forte potenziale citotossico alloreattivo contro la leucemia "
+            "(elevato Missing-Self e/o stimolo attivatorio KIR2DS1 su target C2+) associato a un innesto "
+            "altamente protetto da rigetto mediato da NK. Candidato di prima scelta."
+        )
+    elif gvl_score >= 3 and hvg_score <= 3:
+        level = "FAVOREVOLE"
+        title = "🟢 Donatore Favorevole (Buon Potenziale GvL)"
+        color = "#3b82f6"
+        badge_bg = "#dbeafe"
+        badge_txt = "#1e40af"
+        recom = (
+            "Profilo clinico vantaggioso: presenza di fattori alloreattivi e/o aplotipo B favorevole, con "
+            "rischio di reiezione contenuto. Donatore raccomandato per la procedura trapiantologica."
+        )
+    else:
+        level = "STANDARD"
+        title = "🟡 Donatore Idoneo Standard (Effetto NK Neutro)"
+        color = "#f59e0b"
+        badge_bg = "#fef3c7"
+        badge_txt = "#92400e"
+        recom = (
+            "Profilo convenzionale neutro: assenza di specifici mismatch alloreattivi inibitori e innesto "
+            "in equilibrio immunologico basale. Il trapianto seguirà il decorso standard dei protocolli clinici."
+        )
+
+    return {
+        "level": level,
+        "title": title,
+        "color": color,
+        "badge_bg": badge_bg,
+        "badge_txt": badge_txt,
+        "recommendation": recom
+    }
+
+def generate_radar_chart_svg(gvh_score, hvg_score, gvl_score, width=320, height=270):
+    """
+    Genera un Radar Chart SVG puro e moderno a 3 assi (GvH, HvG, GvL) su scala 1-5.
+    Totalmente reattivo, privo di dipendenze esterne.
+    """
+    cx = width / 2.0
+    cy = height / 2.0 + 8.0
+    max_r = min(width, height) * 0.38
+
+    # 3 vertici:
+    # Asse 1 (GvH): Top (-90 gradi)
+    # Asse 2 (GvL): Bottom-Right (30 gradi)
+    # Asse 3 (HvG): Bottom-Left (150 gradi)
+    angles_deg = [-90.0, 30.0, 150.0]
+    angles_rad = [math.radians(a) for a in angles_deg]
+
+    def polar_to_cartesian(angle_rad, radius):
+        return cx + radius * math.cos(angle_rad), cy + radius * math.sin(angle_rad)
+
+    # Griglia concentrica da 1 a 5
+    grid_lines = []
+    for step in range(1, 6):
+        r = (step / 5.0) * max_r
+        pts = [polar_to_cartesian(a, r) for a in angles_rad]
+        pts_str = " ".join(f"{x:.1f},{y:.1f}" for x, y in pts)
+        grid_lines.append(
+            f'<polygon points="{pts_str}" fill="none" stroke="#e2e8f0" stroke-width="1" stroke-dasharray="2,2"/>'
+        )
+        # Etichetta livello su asse GvH
+        lx, ly = polar_to_cartesian(angles_rad[0], r)
+        grid_lines.append(
+            f'<text x="{lx + 6}" y="{ly + 3}" font-size="9" fill="#94a3b8" font-family="sans-serif">{step}</text>'
+        )
+
+    # Linee assi dal centro
+    axis_lines = []
+    for a in angles_rad:
+        x, y = polar_to_cartesian(a, max_r)
+        axis_lines.append(
+            f'<line x1="{cx}" y1="{cy}" x2="{x}" y2="{y}" stroke="#cbd5e1" stroke-width="1.2"/>'
+        )
+
+    # Poligono dati paziente/donatore
+    scores = [float(gvh_score), float(gvl_score), float(hvg_score)]
+    data_pts = []
+    for sc, a in zip(scores, angles_rad):
+        r = (max(1.0, min(5.0, sc)) / 5.0) * max_r
+        data_pts.append(polar_to_cartesian(a, r))
+
+    data_pts_str = " ".join(f"{x:.1f},{y:.1f}" for x, y in data_pts)
+
+    # Determinazione colore dominante
+    if gvl_score >= 4 and hvg_score <= 2:
+        poly_fill = "rgba(16, 185, 129, 0.35)"
+        poly_stroke = "#059669"
+    elif hvg_score >= 4:
+        poly_fill = "rgba(239, 68, 68, 0.35)"
+        poly_stroke = "#dc2626"
+    else:
+        poly_fill = "rgba(59, 130, 246, 0.35)"
+        poly_stroke = "#2563eb"
+
+    data_dots = []
+    for x, y in data_pts:
+        data_dots.append(
+            f'<circle cx="{x:.1f}" cy="{y:.1f}" r="4.5" fill="{poly_stroke}" stroke="#ffffff" stroke-width="1.5"/>'
+        )
+
+    # Etichette dei vertici
+    lbl_gvh_x, lbl_gvh_y = polar_to_cartesian(angles_rad[0], max_r + 18)
+    lbl_gvl_x, lbl_gvl_y = polar_to_cartesian(angles_rad[1], max_r + 22)
+    lbl_hvg_x, lbl_hvg_y = polar_to_cartesian(angles_rad[2], max_r + 22)
+
+    svg = f"""
+    <svg width="100%" height="{height}" viewBox="0 0 {width} {height}" xmlns="http://www.w3.org/2000/svg" style="background:#ffffff; border-radius:12px; border:1px solid #e2e8f0;">
+        <!-- Griglia -->
+        {''.join(grid_lines)}
+        {''.join(axis_lines)}
+        
+        <!-- Poligono Dati -->
+        <polygon points="{data_pts_str}" fill="{poly_fill}" stroke="{poly_stroke}" stroke-width="2.5" stroke-linejoin="round"/>
+        {''.join(data_dots)}
+
+        <!-- Etichette Asse -->
+        <text x="{lbl_gvh_x}" y="{lbl_gvh_y}" text-anchor="middle" font-size="11" font-weight="bold" fill="#1e293b" font-family="sans-serif">⚡ GvH ({gvh_score}/5)</text>
+        <text x="{lbl_gvl_x}" y="{lbl_gvl_y}" text-anchor="middle" font-size="11" font-weight="bold" fill="#059669" font-family="sans-serif">🎯 GvL ({gvl_score}/5)</text>
+        <text x="{lbl_hvg_x}" y="{lbl_hvg_y}" text-anchor="middle" font-size="11" font-weight="bold" fill="#dc2626" font-family="sans-serif">🛡️ HvG ({hvg_score}/5)</text>
+    </svg>
+    """
+    return svg
 
 def format_excel_row(edu_results, haplo, b_score, gvh_sc, hvg_sc, gvl_sc):
     """
@@ -514,6 +651,8 @@ def analyze_single_pair(rec_a, rec_b, rec_c, don_a, don_b, don_c, don_kir_set, k
         edu_res, d_ligs, r_ligs, haplo, b_score, k2ds1_edu_status
     )
 
+    recom = calculate_donor_recommendation(gvh_sc, hvg_sc, gvl_sc, haplo, b_score)
+    radar_svg = generate_radar_chart_svg(gvh_sc, hvg_sc, gvl_sc)
     excel_str = format_excel_row(edu_res, haplo, b_score, gvh_sc, hvg_sc, gvl_sc)
 
     return {
@@ -528,5 +667,7 @@ def analyze_single_pair(rec_a, rec_b, rec_c, don_a, don_b, don_c, don_kir_set, k
         "gvh": {"score": gvh_sc, "status": gvh_s, "color": gvh_c},
         "hvg": {"score": hvg_sc, "status": hvg_s, "color": hvg_c},
         "gvl": {"score": gvl_sc, "status": gvl_s, "color": gvl_c},
+        "recommendation": recom,
+        "radar_svg": radar_svg,
         "excel_str": excel_str
     }

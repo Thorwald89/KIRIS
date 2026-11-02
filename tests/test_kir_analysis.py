@@ -14,6 +14,8 @@ from src.kir_analysis import (
     calculate_b_content_logic,
     assess_donor_education,
     calculate_vectors_quantitative,
+    calculate_donor_recommendation,
+    generate_radar_chart_svg,
     analyze_single_pair
 )
 
@@ -131,6 +133,21 @@ class TestKirisImmunogenetics(unittest.TestCase):
         })
         self.assertEqual(haplo_b, "B/X")
         self.assertGreaterEqual(score_b, 2)
+
+    def test_donor_recommendation_and_radar_svg(self):
+        # Test Donatore Ottimale
+        rec_opt = calculate_donor_recommendation(gvh_score=4, hvg_score=1, gvl_score=5, haplo="B/X", b_score=3)
+        self.assertEqual(rec_opt["level"], "PRIORITÀ ELEVATA")
+
+        # Test Donatore Subottimale (HvG alto)
+        rec_sub = calculate_donor_recommendation(gvh_score=1, hvg_score=4, gvl_score=2, haplo="A/A", b_score=0)
+        self.assertEqual(rec_sub["level"], "SUBOTTIMALE")
+
+        # Test generazione SVG
+        svg = generate_radar_chart_svg(3, 1, 4)
+        self.assertIn("<svg", svg)
+        self.assertIn("polygon", svg)
+        self.assertIn("GvL", svg)
 
 if __name__ == '__main__':
     unittest.main()
