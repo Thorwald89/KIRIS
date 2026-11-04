@@ -656,7 +656,7 @@ def format_excel_row(edu_results, haplo, b_score, gvh_sc, hvg_sc, gvl_sc):
     return (
         f"{haplo}\t{b_score}\t{get_excel_label('KIR3DL1')}\t{get_excel_label('KIR2DL1')}\t"
         f"{get_excel_label('KIR2DL2')}\t{get_excel_label('KIR2DL3')}\t{get_excel_label('KIR2DS1')}\t"
-        f"{get_excel_label('KIR3DL2')}\t{gvh_sc}\t{hvg_sc}\t{gvl_sc}"
+        f"{get_excel_label('KIR3DL2')}\t{gvh_sc}\t{hvg_sc}\t{gvl_sc}\tRUO (Non-IVD)"
     )
 
 def analyze_single_pair(rec_a, rec_b, rec_c, don_a, don_b, don_c, don_kir_set, kir3dl1_null_variant=False, is_dark=True, **kwargs):

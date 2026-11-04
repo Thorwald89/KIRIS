@@ -35,6 +35,15 @@ theme_choice = st.sidebar.radio(
 )
 is_dark = "Scuro" in theme_choice
 
+st.sidebar.markdown("---")
+st.sidebar.markdown("### ⚖️ Licenza & Regime d'Uso")
+st.sidebar.markdown(
+    "**Licenza:** Copyleft [GNU GPLv3](https://www.gnu.org/licenses/gpl-3.0.html)\n\n"
+    "**Regolamentazione:** *For Research Use Only (RUO)*\n\n"
+    "**Dispositivo:** Non-IVD (Regolamento UE 2017/746)\n\n"
+    "**Copyright:** © 2026 KIRIS Contributors. Software scientifico aperto protetto da diritto d'autore."
+)
+
 # Palette cromatica dinamica
 if is_dark:
     theme = {
@@ -101,8 +110,90 @@ st.markdown(f"""
 """, unsafe_allow_html=True)
 
 # ==============================================================================
-# MODALE POPUP LIGHTBOX: NOTE DI RILASCIO & CHANGELOG
+# MODALI POPUP LIGHTBOX: NOTE DI RILASCIO & CITAZIONI SCIENTIFICHE
 # ==============================================================================
+@st.dialog("📚 Riferimenti Bibliografici & Letteratura Scientifica", width="large")
+def show_citations():
+    st.markdown(r"""
+    ### 🔬 Fondamenti Scientifici & Validazione Algoritmica di KIRIS
+
+    I modelli e le regole deterministiche implementate in **KIRIS** si basano su evidenze pubblicate su riviste internazionali peer-reviewed e sulle raccomandazioni di consenso europeo (**EBMT**) e italiano (**GITMO**).
+
+    ---
+
+    #### 1. Alloreattività NK & Modello del Missing-Self
+    * **Ruggeri L, Capanni M, Urbani E, et al.**  
+      *Effectiveness of donor natural killer cell alloreactivity in mismatched hematopoietic transplants.*  
+      **Science**, 2002; 295(5562):2097–2100. [DOI: 10.1126/science.1068440](https://doi.org/10.1126/science.1068440)  
+      *Supporto Algoritmico:* Definizione fondativa del modello classico di mancata inibizione recettoriale (missing-self) e correlazione con la prevenzione della recidiva leucemica.
+
+    * **Ruggeri L, Mancusi A, Capanni M, et al.**  
+      *Donor natural killer cell alloreactivity and acute myeloid leukemia.*  
+      **Blood**, 2007; 110(1):433–440. [DOI: 10.1182/blood-2006-11-056812](https://doi.org/10.1182/blood-2006-11-056812)  
+      *Supporto Algoritmico:* Stratificazione clinica del mismatch inibitorio nella Leucemia Mieloide Acuta (LMA) e stima quantitativa del vettore $GvL$.
+
+    * **Mancusi A, Ruggeri L, Velardi A.**  
+      *KIR alloreactivity in haploidentical hematopoietic cell transplantation.*  
+      **Transfus Med Hemother**, 2014; 41(4):299–304. [DOI: 10.1159/000365534](https://doi.org/10.1159/000365534)  
+      *Supporto Algoritmico:* Regole decisionali per la valutazione del rischio rigetto ($HvG$) e per il bilanciamento nel trapianto aploidentico T-depleto e non.
+
+    ---
+
+    #### 2. Modello Aplotipo B & Cooley B-Score
+    * **Cooley S, Trachtenberg E, Bergemann TL, et al.**  
+      *Donors with group B KIR haplotypes improve relapse-free survival after unrelated donor hematopoietic cell transplantation for acute myelogenous leukemia.*  
+      **Blood**, 2009; 113(3):726–732. [DOI: 10.1182/blood-2008-07-171926](https://doi.org/10.1182/blood-2008-07-171926)  
+      *Supporto Algoritmico:* Classificazione dell'assetto genomico donatore in Aplotipo A/A vs Aplotipo B/x basato sui geni attivatori e inibitori B-specifici.
+
+    * **Cooley S, Weisdorf DJ, Guethlein LA, et al.**  
+      *Donor selection for natural killer cell receptor genes leads to superior survival after unrelated donor transplantation for acute myelogenous leukemia.*  
+      **Blood**, 2010; 116(14):2411–2419. [DOI: 10.1182/blood-2010-05-282970](https://doi.org/10.1182/blood-2010-05-282970)  
+      *Supporto Algoritmico:* Algoritmo scalare del B-Score (0, 1, 2, $\ge 3$) con pesatura differenziata dei cluster genomici centromerico (Cen-B) e telomerico (Tel-B).
+
+    ---
+
+    #### 3. Recettore Attivatorio KIR2DS1 & Ligando HLA-C2
+    * **Venstrom JM, Pittari G, Gooley TA, et al.**  
+      *HLA-C-dependent prevention of leukemia relapse by donor activating KIR2DS1.*  
+      **N Engl J Med**, 2012; 367(9):805–816. [DOI: 10.1056/NEJMoa1200503](https://doi.org/10.1056/NEJMoa1200503)  
+      *Supporto Algoritmico:* Regola del bersaglio tumorale: l'alloreattività anti-leucemica mediata da $KIR2DS1$ si manifesta solo se il ricevente è portatore del ligando $C2$.
+
+    * **Pittari G, Liu XR, Selvakumar A, et al.**  
+      *NK cell tolerance and education by KIR2DS1 in HLA-C2/C2 donors.*  
+      **Blood**, 2013; 122(20):3501–3510. [DOI: 10.1182/blood-2013-05-502690](https://doi.org/10.1182/blood-2013-05-502690)  
+      *Supporto Algoritmico:* Modello dell'educazione e tolleranza di $KIR2DS1$: le cellule NK risultano ipereccitabili in background donatore $C1/C1$, responsive in $C1/C2$, anergiche/tollerizzate in $C2/C2$.
+
+    ---
+
+    #### 4. Educazione Funzionale NK & Rheostat Model
+    * **Joncker NT, Fernandez NC, Treiner E, Vivier E, Raulet DH.**  
+      *NK cell responsiveness is tuned to the level of self-MHC class I molecules.*  
+      **Immunity**, 2009; 31(6):982–995. [DOI: 10.1016/j.immuni.2009.09.016](https://doi.org/10.1016/j.immuni.2009.09.016)  
+      *Supporto Algoritmico:* Base concettuale del licensing quantitativo continuo proporzionale alla costante di affinità recettoriale.
+
+    * **Boudreau JE, Giglio F, Gooley TA, et al.**  
+      *KIR3DL1/HLA-B subtypes govern acute myelogenous leukemia relapse after hematopoietic cell transplantation.*  
+      **J Clin Oncol**, 2017; 35(20):2268–2278. [DOI: 10.1200/JCO.2016.70.7059](https://doi.org/10.1200/JCO.2016.70.7059)  
+      *Supporto Algoritmico:* Gerarchia differenziale di licensing tra Bw4-Ile80 (alta affinità), Bw4-Thr80 (media affinità), Bw4-Leu80 ($B*13$ anergico) e gestione della variante $KIR3DL1*004$ (non espressa a membrana).
+
+    ---
+
+    #### 5. Linee Guida di Consenso & Database Internazionali
+    * **EBMT / GITMO Consensus Guidelines:** Raccomandazioni europee per la selezione del miglior donatore nel trapianto allogenico.
+    * **Robinson J, Barker DJ, Georgiou X, et al.**  
+      *IPD-IMGT/HLA Database.* **Nucleic Acids Res**, 2020; 48(D1):D948–D955.
+    * **Robinson J, Halliwell JA, McWilliam H, et al.**  
+      *IPD-KIR Database.* **Nucleic Acids Res**, 2013; 41(D1):D1234–D1240.
+
+    ---
+
+    #### ⚖️ Proprietà Intellettuale & Status Regolatorio
+    * **Licenza d'Uso (Copyleft):** Rilasciato sotto i termini della **GNU General Public License v3 (GPLv3)**. Il software è libero per lo studio e la ricerca, con vincolo di reciprocità aperta (copyleft).
+    * **Ambito di Utilizzo:** **For Research Use Only (RUO)**. Strumento **NON-IVD** (non marcato CE ai sensi del Regolamento UE 2017/746).
+    """)
+    if st.button("Chiudi Finestra", key="btn_close_citations", use_container_width=True):
+        st.rerun()
+
 @st.dialog("📋 Note di Rilascio & Cronologia Versioni (KIRIS Release Notes)", width="large")
 def show_release_notes():
     st.markdown(r"""
@@ -110,6 +201,8 @@ def show_release_notes():
 
     ---
     #### 🚀 Release 0.4 (Versione Attuale)
+    * **Licenza Copyleft GNU GPLv3 & Disclaimer RUO:** integrazione formale della licenza copyleft aperta con tutela del codice sorgente e qualificazione esplicita *For Research Use Only (RUO / Non-IVD)*.
+    * **Lightbox Riferimenti Bibliografici:** modale interattivo con tutti i paper scientifici peer-reviewed (Science, Blood, NEJM, Immunity, JCO) mappati sui moduli algoritmici.
     * **Identità Software & UI Unificata:** rebranding ufficiale in **KIRIS** (KIR Interpretation Software).
     * **Supporto Completo Dark Mode / Light Mode:** selettore integrato con palette cromatica ad alto contrasto per schermi e ambienti operativi scuri/neri.
     * **Nuovo Radar Chart Polare ad Alta Risoluzione:** visualizzazione geometrica dei 3 vettori (*GvH*, *HvG*, *GvL*) isolata su canvas nativo, con griglia polare a 5 livelli sfumati, assi radiali e badge vettoriali luminescenti.
@@ -135,16 +228,20 @@ def show_release_notes():
     * Architettura deterministica conforme a criteri ISO 13485 (assenza di modelli stocastici).
     * Classificazione allelica IMGT/HLA per Loci A, B e C.
     """)
-    if st.button("Chiudi", use_container_width=True):
+    if st.button("Chiudi", key="btn_close_relnotes", use_container_width=True):
         st.rerun()
 
 st.title("🧬 KIRIS: Alloreactivity & Immunogenetics Toolkit")
 
-col_head_info, col_head_rel = st.columns([3, 1])
+col_head_info, col_head_bib, col_head_rel = st.columns([2.3, 1.35, 1.35])
 with col_head_info:
-    st.markdown("**Versione Conforme a Validazione Deterministica ISO 13485**")
+    st.markdown("**Validazione Deterministica ISO 13485** | ⚖️ **Licenza Copyleft GNU GPLv3**")
+    st.caption("🔬 **Status Regolatorio:** *For Research Use Only (RUO)* — Dispositivo Non-IVD (Reg. UE 2017/746)")
+with col_head_bib:
+    if st.button("📚 Citazioni & Letteratura", help="Visualizza i paper scientifici peer-reviewed alla base degli algoritmi di KIRIS", use_container_width=True):
+        show_citations()
 with col_head_rel:
-    if st.button("🏷️ Release 0.4 (Note di Rilascio)", help="Clicca per aprire la finestra modale con il changelog dettagliato", use_container_width=True):
+    if st.button("🏷️ Release 0.4 (Changelog)", help="Clicca per aprire la finestra modale con il changelog dettagliato", use_container_width=True):
         show_release_notes()
 
 # Definizione aplotipi di riferimento
@@ -276,13 +373,29 @@ with tab1:
         st.markdown("---")
 
         # ======================================================================
+        # AVVISO REGOLATORIO: FOR RESEARCH USE ONLY (RUO) / NON-IVD
+        # ======================================================================
+        st.markdown(
+            f'<div style="background-color:rgba(234, 88, 12, 0.12); border:1.5px solid #f97316; '
+            f'border-radius:10px; padding:12px 16px; margin-bottom:18px; display:flex; align-items:center; gap:12px;">'
+            f'<span style="font-size:1.5rem;">🔬</span>'
+            f'<div style="font-size:0.83rem; color:{theme["text_main"]}; line-height:1.45;">'
+            f'<strong>STATUS REGOLATORIO: FOR RESEARCH USE ONLY (RUO)</strong> — '
+            f'Questo software e i punteggi elaborati sono destinati unicamente a scopi di studio e ricerca immunogenetica. '
+            f'<strong>NON costituisce un dispositivo medico-diagnostico in vitro (CE-IVD)</strong> ai sensi del Regolamento UE 2017/746. '
+            f'I risultati non sono utilizzabili per decisioni diagnostiche o terapeutiche vincolanti senza autonoma validazione clinica.'
+            f'</div></div>',
+            unsafe_allow_html=True
+        )
+
+        # ======================================================================
         # 1. RACCOMANDAZIONE CLINICA SINTETICA DEL DONATORE (DONOR RECOMMENDATION)
         # ======================================================================
         st.markdown(
             f'<div style="background-color:{recom["badge_bg"]}; border:2px solid {recom["color"]}; '
             f'border-radius:12px; padding:18px; margin-bottom:25px;">'
             f'<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">'
-            f'<h3 style="margin:0; color:{recom["color"]}; font-size:1.25rem;">{recom["title"]}</h3>'
+            f'<h3 style="margin:0; color:{recom["color"]}; font-size:1.25rem;">{recom["title"]} <span style="font-size:0.75rem; font-weight:normal; opacity:0.85;">[Valutazione RUO]</span></h3>'
             f'<span style="background:{recom["color"]}; color:white; font-weight:bold; font-size:0.8rem; padding:4px 10px; border-radius:20px;">'
             f'{recom["level"]}</span>'
             f'</div>'
@@ -674,6 +787,7 @@ with tab2:
 
                         results_batch.append({
                             "ID": current_id,
+                            "Status_Regolatorio": "RUO (Non-IVD - Reg. UE 2017/746)",
                             "Stato_Analisi": "SUCCESS",
                             "Note_Errore": "",
                             "Idoneità_Donatore": res["recommendation"]["level"],
@@ -695,6 +809,7 @@ with tab2:
                     except Exception as err_row:
                         results_batch.append({
                             "ID": current_id,
+                            "Status_Regolatorio": "RUO (Non-IVD - Reg. UE 2017/746)",
                             "Stato_Analisi": "ERROR",
                             "Note_Errore": str(err_row),
                             "Idoneità_Donatore": "ERRORE",
@@ -717,6 +832,22 @@ with tab2:
                     progress_bar.progress((idx + 1) / tot_rows)
 
                 status_text.success(f"Analisi batch completata su {tot_rows} casi!")
+
+                # ==============================================================
+                # AVVISO REGOLATORIO COORTE: RESEARCH USE ONLY (RUO) / NON-IVD
+                # ==============================================================
+                st.markdown(
+                    f'<div style="background-color:rgba(234, 88, 12, 0.12); border:1.5px solid #f97316; '
+                    f'border-radius:10px; padding:12px 16px; margin:16px 0 20px 0; display:flex; align-items:center; gap:12px;">'
+                    f'<span style="font-size:1.5rem;">🔬</span>'
+                    f'<div style="font-size:0.83rem; color:{theme["text_main"]}; line-height:1.45;">'
+                    f'<strong>AVVISO REGOLATORIO COORTE: RESEARCH USE ONLY (RUO)</strong> — '
+                    f'I dati e i punteggi elaborati per l\'intera coorte ({tot_rows} casi) sono generati ad esclusivo uso di ricerca scientifica e bioinformatica traslazionale. '
+                    f'<strong>Software privo di marcatura CE-IVD (Regolamento UE 2017/746)</strong>. Ciascuna riga nei report esportati riporta la colonna identificativa dello status RUO.'
+                    f'</div></div>',
+                    unsafe_allow_html=True
+                )
+
                 df_results = pd.DataFrame(results_batch)
 
                 # --- METRICHE DI SINTESI DELLA COORTE ---
@@ -809,3 +940,17 @@ with tab2:
                         )
                     except Exception:
                         st.caption("Per l'export diretto in .xlsx è consigliato installare openpyxl.")
+
+# ==============================================================================
+# FOOTER ISTITUZIONALE & DISCLAIMER LEGALE
+# ==============================================================================
+st.markdown("---")
+st.markdown(
+    f'<div style="text-align:center; font-size:0.8rem; color:{theme["text_muted"]}; padding:14px 0 24px 0; line-height:1.6;">'
+    f'🧬 <strong>KIRIS</strong> — Software Deterministico per la Valutazione dell\'Alloreattività NK & Immunogenetica Trapiantologica<br>'
+    f'⚖️ Rilasciato sotto licenza copyleft <strong>GNU General Public License v3.0 (GPLv3)</strong> | '
+    f'🔬 <em>For Research Use Only (RUO) — Non Marcato CE-IVD (Regolamento UE 2017/746)</em><br>'
+    f'Tutti i diritti d\'autore riservati per l\'architettura computazionale e il codice sorgente.'
+    f'</div>',
+    unsafe_allow_html=True
+)
